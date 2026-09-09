@@ -10,6 +10,23 @@ decide which dots to light, and that decision is what this folder contains.
 
 ---
 
+## Course outcome CO1
+
+> **2310218L.CO.1** — *Apply OpenGL graphics primitives to develop graphics applications.*
+> **[L3]**
+
+**Where we stand on this.** This build uses no OpenGL. Every primitive is one we wrote —
+the line, circle and fill routines in this document are ours, drawn into a pixel buffer we
+own.
+
+So CO1 is met in substance, in that primitives are composed into a working graphics
+application, but not in the specific library the outcome names. The routines we wrote
+instead belong to CO3, *develop 2D and 3D objects using various algorithms*, which they
+answer more completely than a library call would.
+
+An OpenGL rendering path is planned, and it is what CO4 and CO6 wait on. Until it exists,
+this is the honest position.
+
 ## The files
 
 | File | Lines | What it is |
@@ -292,18 +309,18 @@ scene.setAttribute("transform",
 
 ---
 
-## Outcomes beyond CO1 that this code also covers
+## Outcomes beyond CO1
 
-CO1 is marked in the sections above. The rest are covered as follows.
-
-| Outcome | What it asks for | Where it is in this document |
+| Outcome | Wording | Where it is |
 |---|---|---|
-| **CO2** | Solve real-time problems using geometric transformations | Translation carries the value along the bus; scaling drives the zoom — see *In the web version* |
-| **CO3** | Develop 2D and 3D objects using various algorithms | Bresenham's line and circle, the DDA comparison, scan-line polygon fill, and boundary and flood fill. The 3D half is not built yet |
-| **CO5** | Implement suitable clipping algorithms | Cohen–Sutherland, applied to the flag wire so it stays correct when the diagram is panned |
+| **CO2** | *Solve the real time problems using geometric transformations.* [L3] | Translation carries the value along the bus; scaling drives the zoom, applied about the centre of the diagram rather than the origin |
+| **CO3** | *Develop 2D and 3D objects using various algorithms.* [L3] | The 2D half is done and is most of this document — Bresenham's line and circle, the DDA comparison, scan-line fill, boundary and flood fill. **3D is not built** |
+| **CO4** | *Apply various methods for projection and viewing it into real world.* [L3] | **Not met.** Needs the OpenGL rendering path |
+| **CO5** | *Implement the suitable clipping algorithms.* [L3] | Cohen–Sutherland, applied to the flag wire so it stays correct when the diagram is panned |
+| **CO6** | *Design the texture images, light and color using different objects.* [L3] | **Not met.** Needs the OpenGL rendering path |
 
-CO4 and CO6 — projection, viewing, light and texture — need the OpenGL rendering path and
-are listed as planned work.
+Three of the six are answered by working code. CO4 and CO6, and the 3D half of CO3, wait
+on the OpenGL path — the same dependency that CO1 notes above.
 
 ## Practicals this covers
 

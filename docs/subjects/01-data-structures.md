@@ -9,6 +9,14 @@ a real job inside the processor — none of them exist just to demonstrate a top
 
 ---
 
+## Course outcome CO1
+
+> **2310214L.CO.1** — *Develop applications using arrays.* **[L3]**
+
+Met directly. Arrays hold the register file, the instruction memory and the screen buffer,
+and the fetch queue in this folder is built on one. Each is indexed by position, which is
+the property that made an array the right choice rather than a list.
+
 ## The files
 
 | File | Lines | What it is |
@@ -222,17 +230,19 @@ working.
 
 ---
 
-## Outcomes beyond CO1 that this code also covers
+## Outcomes beyond CO1
 
 CO1 is marked in the sections above. The remaining outcomes are covered by the same
-codebase, and this is where each one lives.
+codebase, quoted here as the syllabus words them.
 
-| Outcome | What it asks for | Where it is in this document |
+| Outcome | Wording | Where it is |
 |---|---|---|
-| **CO2** | Choose a suitable type of linked list | `Deque.h` — doubly linked, because the history needs both ends · `LinkedList.h` — singly linked, where only forward reading is needed |
-| **CO3** | Build applications using stack and queue | `Stack.h` — the CPU call stack for CALL and RET · `CircularQueue.h` — the instruction fetch buffer · `Deque.h` — input- and output-restricted forms |
-| **CO4** | Solve problems using searching and sorting | `LinkedList.h` — the sort that orders the memory dump before it is printed |
-| **CO5** | Apply suitable hashing techniques | `HashMap.h` — all three collision strategies, used for the symbol table and for sparse memory |
+| **CO2** | *Choose suitable type of linked list for various applications.* [L3] | `Deque.h` — doubly linked, because the history is read from both ends · `LinkedList.h` — singly linked, where only forward reading is needed |
+| **CO3** | *Build scenario based applications using stack and queue.* [L3] | `Stack.h` — the call stack, the scenario being subroutine calls · `CircularQueue.h` — the fetch buffer · `Deque.h` — input- and output-restricted forms |
+| **CO4** | *Solve given problems using searching and sorting techniques.* [L3] | `LinkedList.h` — the sort that orders the memory dump before it is printed |
+| **CO5** | *Apply suitable hashing techniques for solving given problems.* [L3] | `HashMap.h` — separate chaining, linear probing and quadratic probing, used for the symbol table and for sparse memory |
+
+All five outcomes are answered by code that runs.
 
 ## Practicals this covers
 

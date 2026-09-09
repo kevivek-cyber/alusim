@@ -9,6 +9,16 @@ design does not hold together. None of it is demonstration code sitting to one s
 
 ---
 
+## Course outcome CO1
+
+> **2310261L.CO.1** — *Develop solutions for real world problems using Object Oriented
+> Programming.* **[L3]**
+
+Met directly, and structurally rather than decoratively. The instruction set is a class
+hierarchy, the containers are templates, the errors are an exception hierarchy, and each
+class owns its own state. Remove any of those and the design stops working — which is the
+argument this document makes.
+
 ## The decision that shaped everything
 
 Our processor understands fifteen instructions, each doing something different.
@@ -307,13 +317,15 @@ const RegisterFile& registers() const { return regs_; }
 
 ---
 
-## Outcomes beyond CO1 that this code also covers
+## Outcomes beyond CO1
 
-CO1 is marked in the sections above. The rest are covered as follows.
-
-| Outcome | What it asks for | Where it is in this document |
+| Outcome | Wording | Where it is |
 |---|---|---|
-| **CO2** | Choose an appropriate programming solution to reduce complexity | *The decision that shaped everything* — one class per instruction instead of a fourteen-branch conditional · *Templates* — one container implementation serving every type |
+| **CO2** | *Choose an appropriate programming solution to reduce complexity.* [L3] | *The decision that shaped everything* — one class per instruction rather than a fourteen-branch conditional · *Templates* — one container implementation serving every type it is needed for |
+| **CO3** | *Apply critical thinking and programming skills for problem solving.* [L3] | The design judgements recorded throughout: why `AluBinaryInstruction` covers six operations instead of six classes, why fills are iterative rather than recursive, why the ALU holds no state |
+| **CO4** | *Utilize logic building traits efficiently for solving real life problems.* [L3] | The simulator itself, and the assembly programs written for it — loops, comparisons, branching and subroutines built from a fourteen-instruction set |
+
+All four outcomes are answered by the codebase.
 
 ## Practicals this covers
 
