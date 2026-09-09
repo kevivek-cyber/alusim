@@ -31,6 +31,8 @@ decide which dots to light, and that decision is what this folder contains.
 The Canvas is a plain array of pixels with a width and a height. Every drawing routine
 writes into it; nothing writes to the screen directly.
 
+**What this does.** Everything we draw lands in this array first. `setPixel` is the only function that ever writes a pixel, which is why moving to a graphics window later would touch nothing else.
+
 ```cpp
 class Canvas {
     int    width_, height_;
@@ -54,6 +56,8 @@ work is cheap.
 
 Draws a straight line using integers only. An error term tracks how far the true line has
 drifted from the pixel grid, so there is no floating point and no rounding.
+
+**What this does.** Draws every wire and the data bus. Whole numbers only — the error term decides when to step down a row, so there is no rounding and no floating-point arithmetic anywhere.
 
 ```cpp
 void Canvas::drawLineBresenham(int x0, int y0, int x1, int y1, Pixel p) {
@@ -87,6 +91,8 @@ you step through a program.
 Draws a circle by computing **one eighth** of it and mirroring that arc into the other
 seven octants, because a circle is symmetric. Seven eighths of the work is avoided.
 
+**What this does.** Draws the junction dots where wires meet the bus. It calculates one eighth of the circle and mirrors that arc into the other seven, so seven eighths of the work is skipped.
+
 ```cpp
 while (y >= x) {
     // eight-way symmetry
@@ -114,6 +120,8 @@ The other classic line algorithm, using floating-point increments and rounding e
 It is not used for the diagram; it exists so the two approaches can be compared directly
 rather than described.
 
+**What this does.** The other way to draw a line, kept alongside Bresenham for comparison. This one uses decimals and rounds at every step — the difference between the two is visible in the code.
+
 ```cpp
 double xInc = static_cast<double>(dx) / steps;
 double yInc = static_cast<double>(dy) / steps;
@@ -133,6 +141,8 @@ for (int i = 0; i <= steps; ++i) {
 
 Works one horizontal row at a time. For each row it finds where that row crosses the
 polygon's edges, sorts those crossings, and fills between consecutive pairs.
+
+**What this does.** Fills the component boxes. For each horizontal row it finds where that row crosses the shape's edges, sorts those crossings, then fills between consecutive pairs.
 
 ```cpp
 for (int y = yMin; y <= yMax; ++y) {
@@ -162,6 +172,8 @@ counted twice, which would otherwise leave gaps in the fill.
 
 Region filling from a seed point. Both are written **iteratively with an explicit stack**
 rather than recursively:
+
+**What this does.** Region filling using our own stack array instead of recursion. The recursive version in most textbooks runs out of call stack on a large area; this one cannot.
 
 ```cpp
 int* stackX = new int[cap];
@@ -196,6 +208,8 @@ cleanly at the border instead of letting them wrap around.
 
 Each endpoint gets a four-bit region code — one bit each for left, right, below, above:
 
+**What this does.** Clipping begins by giving each end of the line four bits — one for each edge of the window it happens to fall outside of.
+
 ```cpp
 if (x < win.xmin)      c |= 1;   // LEFT
 else if (x > win.xmax) c |= 2;   // RIGHT
@@ -205,6 +219,8 @@ else if (y > win.ymax) c |= 8;   // TOP
 <sub>src/ui/Canvas.cpp:147</sub>
 
 Then three cases:
+
+**What this does.** The two quick decisions. Both codes zero means the line is fully visible. A non-zero AND means both ends are outside the same edge, so the line can be discarded with no arithmetic at all.
 
 ```cpp
 if ((c0 | c1) == 0) return true;    // both inside  -> accept
@@ -225,6 +241,8 @@ Uses the Canvas to draw the actual displays:
 **The datapath diagram** — component boxes, the shared bus, the drop wires, and junction
 dots, with active parts drawn differently:
 
+**What this does.** The same drawing call renders a wire whether it is idle or carrying data — only the character changes. That is what makes the datapath appear to light up as you step.
+
 ```cpp
 Pixel busPix = sig.busActive ? PX_ACTIVE : PX_WIRE;
 ...
@@ -234,6 +252,8 @@ c.drawLineBresenham(2, busY, W - 3, busY, busPix);
 
 The flag feedback wire from the ALU back to the control unit is drawn **through the
 clipper**, so panning and zooming behave correctly:
+
+**What this does.** The flag wire running from the ALU back to the control unit is drawn through the clipper, so it still behaves correctly when the diagram is panned or zoomed.
 
 ```cpp
 ClipWindow win(0, 0, W - 1, H - 1);

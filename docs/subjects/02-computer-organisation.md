@@ -33,6 +33,8 @@ responsibility it has in real hardware.
 A 16-bit value with all the operators a processor needs, so ALU code reads like
 arithmetic instead of function calls.
 
+**What this does.** Lets the 16-bit machine word be added like an ordinary number, so the ALU can be written as `a + b`. The cast is what makes the value wrap around at 16 bits instead of growing.
+
 ```cpp
 Word operator+(const Word& o) const { return Word(static_cast<u16>(value_ + o.value_)); }
 ```
@@ -56,6 +58,8 @@ Holds the eight general registers plus the special ones a processor needs:
 | MAR / MDR | Memory address and data registers |
 
 Each register also records whether it was **read or written during this cycle**:
+
+**What this does.** Reads a register, and quietly notes that it was read during this cycle. That note is what lets the diagram highlight exactly which registers took part in the instruction.
 
 ```cpp
 Word read()        { readThisCycle_ = true;  return value_; }
@@ -82,6 +86,8 @@ Performs ADD, SUB, AND, OR, XOR, NOT, SHL, SHR, CMP, INC and DEC, returning a re
 
 It holds no state at all — the same inputs always give the same outputs:
 
+**What this does.** The ALU's entire public interface. Give it an operation and two values, and it returns the result together with the flags. It keeps no state between calls, which is why it can be tested completely on its own.
+
 ```cpp
 AluResult execute(AluOp op, Word a, Word b);
 ```
@@ -94,6 +100,8 @@ around it.
 
 Carry is the bit that falls out of the top. We add in a 32-bit scratch value and test
 bit 16:
+
+**What this does.** How addition and the carry flag actually work. We add using a 32-bit scratch value and then test bit 16 — if that bit is set, the answer did not fit into 16 bits.
 
 ```cpp
 case ALU_ADD:
@@ -108,6 +116,8 @@ case ALU_ADD:
 Signed overflow is a different question — it happens when both operands share a sign but
 the result does not:
 
+**What this does.** Signed overflow is a different question from carry. It happens when both inputs have the same sign but the answer comes out with the opposite sign — which means the true result was too large to represent.
+
 ```cpp
 bool ALU::computeOverflowAdd(Word a, Word b, Word r) {
     return (a.msb() == b.msb()) && (r.msb() != a.msb());
@@ -117,6 +127,8 @@ bool ALU::computeOverflowAdd(Word a, Word b, Word r) {
 
 **Multiplication** is also here, done two ways so they can be compared — add-and-shift,
 and successive addition. Both return a printable trace:
+
+**What this does.** Multiplication done two ways, each writing out a step-by-step trace. Running both on 13 × 7 and getting 91 from each is also a useful correctness check.
 
 ```cpp
 static Word multiplyAddShift(Word a, Word b, std::string* trace);
@@ -132,6 +144,8 @@ Running both on 13 × 7 and getting 91 from each is also a correctness check.
 
 Fifteen instruction classes, all deriving from one abstract base. Each knows two things:
 how to execute itself, and which control signals it needs.
+
+**What this does.** Every instruction must be able to do two things: execute itself, and say which control signals it needs. These two lines are what the entire instruction set is built on.
 
 ```cpp
 class Instruction {
@@ -151,6 +165,8 @@ RegRead  RegWrite  ALUen  FlagWr  StackOp  BusAct  Halt
 ```
 
 Each instruction returns its own vector. For example an ADD asserts:
+
+**What this does.** What an ADD instruction asks the control unit to switch on. This *is* the control unit's output for that instruction — nothing else in the system produces signals.
 
 ```cpp
 ControlSignals AluBinaryInstruction::signals() const {
@@ -177,6 +193,8 @@ new machinery — only a view.
 64K addressable words, but stored sparsely: only cells that were actually written take
 up space, and anything unwritten reads as zero.
 
+**What this does.** Memory is a hash table rather than an array. All 64K addresses exist in principle, but only the cells actually written take up any space.
+
 ```cpp
 class Memory {
     ds::HashMap<unsigned int, u16> cells_;   // address -> value
@@ -198,6 +216,8 @@ diagram can show memory activity.
 
 The part that ties everything together. One call to `step()` advances **exactly one
 micro-stage**:
+
+**What this does.** One press of Step runs exactly one of these four stages. This is the fetch-decode-execute cycle from the textbook, made steppable so it can be watched.
 
 ```cpp
 case STAGE_FETCH:      // PC drives the address, instruction loads into IR
@@ -225,6 +245,8 @@ execution can be rewound.
 A two-pass assembler.
 
 **Pass one** walks the source and records where every label is:
+
+**What this does.** Pass one of the assembler: whenever a line carries a colon, remember the name and the address it sits at. Pass two then turns `JNZ loop` into a jump to line 3.
 
 ```cpp
 if (colon != std::string::npos) {

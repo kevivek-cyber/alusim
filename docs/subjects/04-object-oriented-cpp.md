@@ -15,6 +15,8 @@ Our processor understands fifteen instructions, each doing something different.
 
 **The obvious way** is one long chain of tests inside the processor:
 
+**What this does.** The approach we deliberately did not take: fourteen branches inside one function, which would have to be edited every time an instruction was added.
+
 ```cpp
 if      (op == "ADD")   { /* ... */ }
 else if (op == "LOAD")  { /* ... */ }
@@ -24,6 +26,8 @@ else if (op == "JMP")   { /* ... */ }
 <sub>illustration of the approach we rejected — this is NOT in our source</sub>
 
 **What we did instead** — one abstract base, and a small class per instruction:
+
+**What this does.** What we wrote instead. We declare what every instruction must be able to do, and let each one supply its own version.
 
 ```cpp
 // src/core/Instruction.h
@@ -37,6 +41,8 @@ public:
 <sub>src/core/Instruction.h:65</sub>
 
 And then the entire execute stage of the processor is one line:
+
+**What this does.** The entire execute stage of the processor. It asks the instruction to run itself and never checks which instruction it is holding.
 
 ```cpp
 // src/core/CPU.cpp
@@ -92,6 +98,8 @@ is a deliberate judgement about where inheritance stops being useful.
 Every container in `src/ds/` is a template, so one implementation serves every type it is
 needed for.
 
+**What this does.** The five containers, each written once and usable with any type the project needs.
+
 ```cpp
 template <typename T> class Stack;             // src/ds/Stack.h:23
 template <typename T> class LinkedList;        // src/ds/LinkedList.h:16
@@ -102,6 +110,8 @@ template <typename K, typename V, typename H = Hasher<K> > class HashMap;
 <sub>the five container templates, one line each — declarations only</sub>
 
 The same `Stack<T>` is used as:
+
+**What this does.** The same Stack template holding machine words for the call stack. Elsewhere the very same code holds characters for the expression evaluator.
 
 ```cpp
 ds::Stack<Word>          callStack_;    // CALL / RET and PUSH / POP
@@ -116,6 +126,8 @@ time.
 ## Operator overloading — making arithmetic read like arithmetic
 
 `src/core/Word.h` teaches the 16-bit machine word to behave like a number:
+
+**What this does.** Every operator we taught the machine word, so that ALU code reads like arithmetic rather than a chain of function calls.
 
 ```cpp
 Word  operator+ (const Word& o) const;
@@ -134,6 +146,8 @@ operator u16() const;        // conversion operator
 
 Plus stream insertion, so a register can be printed directly:
 
+**What this does.** Lets a register be printed straight to a stream, which is what the register display uses.
+
 ```cpp
 std::ostream& operator<<(std::ostream& os, const Word& w);
 ```
@@ -147,6 +161,8 @@ to check for mistakes.
 ## Exceptions — failing safely
 
 `src/core/Exceptions.h` defines a small hierarchy, all deriving from one base:
+
+**What this does.** One base type for every error the simulator can raise. Each specific problem inherits from it and reports its own name.
 
 ```cpp
 class SimulatorException : public std::exception {
@@ -174,6 +190,8 @@ SimulatorException
 
 The main loop catches the **base** once, and gets the specific type through `kind()`:
 
+**What this does.** Caught once, here. A bad instruction or an unbalanced RET prints a clear message with a line number instead of crashing the simulator.
+
 ```cpp
 // src/main.cpp
 catch (const SimulatorException& e) {
@@ -197,6 +215,8 @@ instead of crashing the simulator.
 Every node in every container is created and destroyed by our own code. Each destructor
 walks its own chain:
 
+**What this does.** Every node we created is freed by us. The destructor walks its own chain and deletes as it goes.
+
 ```cpp
 // src/ds/LinkedList.h
 void clear() {
@@ -209,6 +229,8 @@ void clear() {
 <sub>src/ds/Deque.h:129</sub>
 
 Copy constructors deep-copy, so two structures never share a node:
+
+**What this does.** Copying a list builds fresh nodes rather than sharing the originals, so two lists can never interfere with one another.
 
 ```cpp
 LinkedList(const LinkedList& other) : head_(0), tail_(0), size_(0) {
@@ -243,6 +265,8 @@ a graphical one without touching the engine.
 ## Static, inline, const
 
 Small things used throughout:
+
+**What this does.** Small helpers that belong to the class but need no object to call them.
 
 ```cpp
 // static — a helper that needs no object

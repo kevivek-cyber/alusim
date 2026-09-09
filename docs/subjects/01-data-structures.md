@@ -35,6 +35,8 @@ pushing past the limit raises an error instead of consuming memory silently.
 to is pushed. When it runs `RET`, that address is popped and the processor jumps back.
 `PUSH` and `POP` use the same stack for ordinary data.
 
+**What this does.** When the program reaches RET, this lifts the saved return address off the top of the stack and hands it back, so the processor knows where to carry on from. If nothing was ever saved, it refuses rather than jumping somewhere random.
+
 ```cpp
 T pop() {
     if (top_ == 0) throw core::StackUnderflowException("pop on empty stack");
@@ -60,6 +62,8 @@ it moves an index and wraps around using modulo.
 
 **What it does in the project:** holds instructions read ahead of execution, so the
 processor always has the next one ready.
+
+**What this does.** Adds an instruction to the waiting line. The `%` is the whole trick: when the index reaches the end of the array it wraps back to the start, so one fixed block of memory is reused forever and nothing is ever shifted.
 
 ```cpp
 void enqueue(const T& value) {
@@ -90,6 +94,8 @@ its neighbours.
 new state at the back; when it is full, the oldest is dropped from the front. Because
 both ends are reachable, execution can be rewound.
 
+**What this does.** Records one more machine state at the back of the history. Each state keeps a link in both directions, which is exactly what lets us walk backwards later.
+
 ```cpp
 void pushBack(const T& value) {
     Node* n = new Node(value);
@@ -102,6 +108,8 @@ void pushBack(const T& value) {
 <sub>src/ds/Deque.h:79</sub>
 
 It also supports restricted modes, where one end is deliberately blocked:
+
+**What this does.** The same list, but refusing to accept at the front when it is set to input-restricted mode. That is how a single deque provides both restricted variants.
 
 ```cpp
 void pushFront(const T& value) {
@@ -124,6 +132,8 @@ program listing, the output log, and the chains inside each hash bucket.
 
 It also sorts itself — insertion sort performed by **relinking nodes**, not by moving
 data:
+
+**What this does.** Puts memory addresses into order before the memory pane prints them — without this they appear in hash-bucket order and read as noise. It sorts by re-pointing the links rather than moving any data.
 
 ```cpp
 template <typename Compare>
@@ -164,6 +174,8 @@ supports all three collision-handling methods, chosen when the table is created.
 2. **Sparse memory.** The address space is 64K words but a program touches maybe five
    cells. Only written cells are stored; anything else reads as zero.
 
+**What this does.** Decides where to look next when two keys land in the same slot. This one line covers both linear and quadratic probing; the block below it is separate chaining, which keeps a small list per bucket instead.
+
 ```cpp
 // all three strategies, selected at construction
 size_t probeIndex(size_t home, size_t i) const {
@@ -180,6 +192,8 @@ table_[home] = e;
 
 Deleting under open addressing leaves a tombstone rather than an empty slot, so probe
 chains are not broken:
+
+**What this does.** When a key is deleted under open addressing we mark the slot rather than emptying it. An empty slot would make later lookups stop early and miss keys that are still there.
 
 ```cpp
 e->occupied = false;
