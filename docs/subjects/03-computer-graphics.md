@@ -28,6 +28,8 @@ decide which dots to light, and that decision is what this folder contains.
 
 ## `Canvas` — a pixel buffer we own
 
+> **CO1** — *apply graphics primitives.* Everything else in this document draws into this buffer.
+
 The Canvas is a plain array of pixels with a width and a height. Every drawing routine
 writes into it; nothing writes to the screen directly.
 
@@ -53,6 +55,8 @@ work is cheap.
 ---
 
 ## Bresenham's line — every wire in the diagram
+
+> **CO3** — *develop 2D objects using various algorithms.* Practical 2.
 
 Draws a straight line using integers only. An error term tracks how far the true line has
 drifted from the pixel grid, so there is no floating point and no rounding.
@@ -88,6 +92,8 @@ you step through a program.
 
 ## Bresenham's circle — the bus junctions
 
+> **CO3** — *2D objects.* Practical 2.
+
 Draws a circle by computing **one eighth** of it and mirroring that arc into the other
 seven octants, because a circle is symmetric. Seven eighths of the work is avoided.
 
@@ -116,6 +122,8 @@ while (y >= x) {
 
 ## DDA line — kept for comparison
 
+> **CO3** — *2D objects.* Practical 2, further practice.
+
 The other classic line algorithm, using floating-point increments and rounding each step.
 It is not used for the diagram; it exists so the two approaches can be compared directly
 rather than described.
@@ -138,6 +146,8 @@ for (int i = 0; i <= steps; ++i) {
 ---
 
 ## Scan-line polygon fill — filling the component blocks
+
+> **CO3** — *2D objects.* Practical 3.
 
 Works one horizontal row at a time. For each row it finds where that row crosses the
 polygon's edges, sorts those crossings, and fills between consecutive pairs.
@@ -169,6 +179,8 @@ counted twice, which would otherwise leave gaps in the fill.
 ---
 
 ## Boundary fill and flood fill
+
+> **CO3** — *2D objects.* Practical 3, further practice.
 
 Region filling from a seed point. Both are written **iteratively with an explicit stack**
 rather than recursively:
@@ -203,6 +215,8 @@ own stack array avoids that — a practical concern the recursive form hides.
 
 ## Cohen–Sutherland clipping — cutting wires at the edge
 
+> **CO5** — *implement suitable clipping algorithms.* Practical 5.
+
 When the diagram is panned or zoomed, wires run off the visible area. Clipping cuts them
 cleanly at the border instead of letting them wrap around.
 
@@ -235,6 +249,8 @@ line cannot possibly cross the window, so it is thrown away without any arithmet
 ---
 
 ## `ConsoleView` — putting it together
+
+> **CO1** — *apply graphics primitives to develop graphics applications.* This is the application they were for.
 
 Uses the Canvas to draw the actual displays:
 
@@ -276,6 +292,8 @@ stage     FDEWFDEWFDEWFDEWFDEWFDEW
 ---
 
 ## In the web version
+
+> **CO2** — *solve real-time problems using geometric transformations.* Translation moves the value along the bus; scaling drives the zoom.
 
 `web/index.html` mirrors the same ideas in the browser: the value travelling along the
 bus is a **translation** interpolated along a waypoint path, and the zoom control is a

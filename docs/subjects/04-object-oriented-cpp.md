@@ -11,6 +11,8 @@ design does not hold together. None of it is demonstration code sitting to one s
 
 ## The decision that shaped everything
 
+> **CO2** — *choose an appropriate programming solution to reduce complexity.* This section is that choice, stated plainly.
+
 Our processor understands fifteen instructions, each doing something different.
 
 **The obvious way** is one long chain of tests inside the processor:
@@ -63,6 +65,8 @@ growing function — the one place most likely to break.
 
 ## The class hierarchy
 
+> **CO1** — *develop solutions using object-oriented programming.* Inheritance and polymorphism, doing real work.
+
 ```
 Instruction (abstract)
 ├── NopInstruction
@@ -95,6 +99,8 @@ is a deliberate judgement about where inheritance stops being useful.
 
 ## Templates — write once, use for anything
 
+> **CO2** — *reduce complexity.* One implementation instead of one per type.
+
 Every container in `src/ds/` is a template, so one implementation serves every type it is
 needed for.
 
@@ -124,6 +130,8 @@ time.
 ---
 
 ## Operator overloading — making arithmetic read like arithmetic
+
+> **CO1** — *object-oriented solutions.* The machine word behaves like a number.
 
 `src/core/Word.h` teaches the 16-bit machine word to behave like a number:
 
@@ -159,6 +167,8 @@ to check for mistakes.
 ---
 
 ## Exceptions — failing safely
+
+> **CO1** — *object-oriented solutions.* One error hierarchy, caught in one place.
 
 `src/core/Exceptions.h` defines a small hierarchy, all deriving from one base:
 
@@ -212,6 +222,8 @@ instead of crashing the simulator.
 
 ## Dynamic memory — allocated and freed by hand
 
+> **CO1** — *object-oriented solutions.* Constructors and destructors owning what they allocate.
+
 Every node in every container is created and destroyed by our own code. Each destructor
 walks its own chain:
 
@@ -245,6 +257,8 @@ program array.
 ---
 
 ## Encapsulation — who owns what
+
+> **CO1** — *object-oriented solutions.* Each class owns its own state and nothing else reaches in.
 
 Each class owns its data and nothing outside can reach it directly:
 

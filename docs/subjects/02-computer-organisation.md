@@ -30,6 +30,8 @@ responsibility it has in real hardware.
 
 ## `Word.h` — the machine word
 
+> **CO1** — *explicate the architecture.* How a value is represented is the first architectural decision.
+
 A 16-bit value with all the operators a processor needs, so ALU code reads like
 arithmetic instead of function calls.
 
@@ -46,6 +48,8 @@ decimal — which is what lets the interface switch number bases.
 ---
 
 ## `RegisterFile.h` — the registers
+
+> **CO1** — *explicate the architecture and instruction set.* Register organisation is the core of it.
 
 Holds the eight general registers plus the special ones a processor needs:
 
@@ -80,6 +84,8 @@ Flags live here too — Zero, Carry, Overflow and Negative, printed as `Z-V-` st
 *The ALU is a pure function: two operands in, a result and four flags out. The flags are the only way a processor can decide anything.*
 
 ## `ALU.h` / `ALU.cpp` — the calculator
+
+> **Practical 1** — *design your ALU using a CPU simulator.* We wrote the simulator, so the ALU is ours &nbsp;·&nbsp; **CO3** — *arithmetic algorithms*, for the carry, overflow and add-and-shift multiply below.
 
 Performs ADD, SUB, AND, OR, XOR, NOT, SHL, SHR, CMP, INC and DEC, returning a result
 **and** the four flags.
@@ -142,6 +148,8 @@ Running both on 13 × 7 and getting 91 from each is also a correctness check.
 
 ## `Instruction.h` / `.cpp` — the instruction set and control signals
 
+> **CO1** — *the instruction set* &nbsp;·&nbsp; **Practical 2** — *design your control unit* &nbsp;·&nbsp; **CO4** — *control-signal generation.*
+
 Fifteen instruction classes, all deriving from one abstract base. Each knows two things:
 how to execute itself, and which control signals it needs.
 
@@ -190,6 +198,8 @@ new machinery — only a view.
 
 ## `Memory.h` / `.cpp` — storage
 
+> **CO1** — *architecture*, the memory side of it.
+
 64K addressable words, but stored sparsely: only cells that were actually written take
 up space, and anything unwritten reads as zero.
 
@@ -213,6 +223,8 @@ diagram can show memory activity.
 *One call to step() advances exactly one stage, and each stage asserts its own control signals — fourteen lines in total, regenerated every cycle.*
 
 ## `CPU.h` / `.cpp` — the datapath
+
+> **CO1** — *architecture.* The fetch-decode-execute cycle, made steppable one stage at a time.
 
 The part that ties everything together. One call to `step()` advances **exactly one
 micro-stage**:
@@ -242,6 +254,8 @@ execution can be rewound.
 
 ## `asm/Assembler.h` / `.cpp` — text into instructions
 
+> **CO2** — *develop assembly language programs.* This is what makes writing them possible.
+
 A two-pass assembler.
 
 **Pass one** walks the source and records where every label is:
@@ -270,6 +284,8 @@ line 4: 'R9' is not a register (use R0 to R7)
 
 ## The instruction set
 
+> **CO1** — *the instruction set of the processor*, designed by us rather than adopted.
+
 Fourteen instructions, enough for real programs with loops and decisions:
 
 ```
@@ -291,6 +307,8 @@ HLT                stop
 ---
 
 ## Sample programs
+
+> **CO2** — *develop assembly language programs*, and **CO3** for the two multiply methods compared in `multiply.asm`.
 
 `programs/` holds three working programs, all verified:
 
