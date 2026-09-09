@@ -28,8 +28,6 @@ a real job inside the processor — none of them exist just to demonstrate a top
 
 ## `Stack.h` — the CPU's call stack
 
-> **CO3** — *build scenario-based applications using stack and queue.* The scenario here is a real one: subroutine calls.
-
 Holds values in last-in-first-out order using linked nodes. Has an optional capacity, so
 pushing past the limit raises an error instead of consuming memory silently.
 
@@ -59,7 +57,7 @@ reports a clear error rather than jumping to a garbage address.
 
 ## `CircularQueue.h` — the instruction fetch buffer
 
-> **CO1** — *develop applications using arrays* (the queue sits on a fixed array) &nbsp;·&nbsp; **CO3** — *stack and queue.*
+> **CO1 — develop applications using arrays.** The queue is built on one fixed array; the wrapping index is what lets that array be reused indefinitely.
 
 A queue built on one fixed array. Instead of shifting elements when something is removed,
 it moves an index and wraps around using modulo.
@@ -90,8 +88,6 @@ also what the round-robin scheduling demonstration runs on.
 ---
 
 ## `Deque.h` — the step-backward history
-
-> **CO2** — *choose a suitable type of linked list* (doubly linked, because both ends are needed) &nbsp;·&nbsp; **CO3** — *queue*, in its input- and output-restricted forms.
 
 A queue that is open at both ends, built on a doubly linked list so each node knows both
 its neighbours.
@@ -129,8 +125,6 @@ void pushFront(const T& value) {
 ---
 
 ## `LinkedList.h` — growing lists, and sorting
-
-> **CO2** — *choose a suitable type of linked list* (singly linked here) &nbsp;·&nbsp; **CO4** — *searching and sorting*, applied to the memory dump.
 
 A singly linked list: each node points only forwards. Used wherever the number of items
 cannot be known in advance.
@@ -170,8 +164,6 @@ cells appear in hash-bucket order, which reads as noise.
 ---
 
 ## `HashMap.h` — fast lookup, and sparse storage
-
-> **CO5** — *apply suitable hashing techniques.* All three collision strategies are implemented, and the same table also gives us sparse memory.
 
 The largest structure in the project. Maps a key to a value in roughly constant time, and
 supports all three collision-handling methods, chosen when the table is created.
@@ -229,6 +221,18 @@ Every one of these is on the live path — remove any of them and the processor 
 working.
 
 ---
+
+## Outcomes beyond CO1 that this code also covers
+
+CO1 is marked in the sections above. The remaining outcomes are covered by the same
+codebase, and this is where each one lives.
+
+| Outcome | What it asks for | Where it is in this document |
+|---|---|---|
+| **CO2** | Choose a suitable type of linked list | `Deque.h` — doubly linked, because the history needs both ends · `LinkedList.h` — singly linked, where only forward reading is needed |
+| **CO3** | Build applications using stack and queue | `Stack.h` — the CPU call stack for CALL and RET · `CircularQueue.h` — the instruction fetch buffer · `Deque.h` — input- and output-restricted forms |
+| **CO4** | Solve problems using searching and sorting | `LinkedList.h` — the sort that orders the memory dump before it is printed |
+| **CO5** | Apply suitable hashing techniques | `HashMap.h` — all three collision strategies, used for the symbol table and for sparse memory |
 
 ## Practicals this covers
 

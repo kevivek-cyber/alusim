@@ -30,7 +30,7 @@ responsibility it has in real hardware.
 
 ## `Word.h` — the machine word
 
-> **CO1** — *explicate the architecture.* How a value is represented is the first architectural decision.
+> **CO1 — explicate the architecture.** How a value is represented is the first architectural decision a design makes.
 
 A 16-bit value with all the operators a processor needs, so ALU code reads like
 arithmetic instead of function calls.
@@ -49,7 +49,7 @@ decimal — which is what lets the interface switch number bases.
 
 ## `RegisterFile.h` — the registers
 
-> **CO1** — *explicate the architecture and instruction set.* Register organisation is the core of it.
+> **CO1 — explicate the architecture.** Register organisation: what exists, how wide it is, and what each register is for.
 
 Holds the eight general registers plus the special ones a processor needs:
 
@@ -85,7 +85,7 @@ Flags live here too — Zero, Carry, Overflow and Negative, printed as `Z-V-` st
 
 ## `ALU.h` / `ALU.cpp` — the calculator
 
-> **Practical 1** — *design your ALU using a CPU simulator.* We wrote the simulator, so the ALU is ours &nbsp;·&nbsp; **CO3** — *arithmetic algorithms*, for the carry, overflow and add-and-shift multiply below.
+> **CO1 — explicate the architecture.** The arithmetic unit and its status flags are part of the machine we designed. *(Also COA Practical 1 — design your ALU.)*
 
 Performs ADD, SUB, AND, OR, XOR, NOT, SHL, SHR, CMP, INC and DEC, returning a result
 **and** the four flags.
@@ -148,7 +148,7 @@ Running both on 13 × 7 and getting 91 from each is also a correctness check.
 
 ## `Instruction.h` / `.cpp` — the instruction set and control signals
 
-> **CO1** — *the instruction set* &nbsp;·&nbsp; **Practical 2** — *design your control unit* &nbsp;·&nbsp; **CO4** — *control-signal generation.*
+> **CO1 — explicate the instruction set.** Every instruction the processor understands is defined here.
 
 Fifteen instruction classes, all deriving from one abstract base. Each knows two things:
 how to execute itself, and which control signals it needs.
@@ -198,7 +198,7 @@ new machinery — only a view.
 
 ## `Memory.h` / `.cpp` — storage
 
-> **CO1** — *architecture*, the memory side of it.
+> **CO1 — explicate the architecture.** The memory side: how it is addressed and how it is held.
 
 64K addressable words, but stored sparsely: only cells that were actually written take
 up space, and anything unwritten reads as zero.
@@ -224,7 +224,7 @@ diagram can show memory activity.
 
 ## `CPU.h` / `.cpp` — the datapath
 
-> **CO1** — *architecture.* The fetch-decode-execute cycle, made steppable one stage at a time.
+> **CO1 — explicate the architecture.** The fetch-decode-execute cycle, made steppable one stage at a time.
 
 The part that ties everything together. One call to `step()` advances **exactly one
 micro-stage**:
@@ -254,8 +254,6 @@ execution can be rewound.
 
 ## `asm/Assembler.h` / `.cpp` — text into instructions
 
-> **CO2** — *develop assembly language programs.* This is what makes writing them possible.
-
 A two-pass assembler.
 
 **Pass one** walks the source and records where every label is:
@@ -284,7 +282,7 @@ line 4: 'R9' is not a register (use R0 to R7)
 
 ## The instruction set
 
-> **CO1** — *the instruction set of the processor*, designed by us rather than adopted.
+> **CO1 — the instruction set of the processor**, designed by us rather than adopted from an existing machine.
 
 Fourteen instructions, enough for real programs with loops and decisions:
 
@@ -308,8 +306,6 @@ HLT                stop
 
 ## Sample programs
 
-> **CO2** — *develop assembly language programs*, and **CO3** for the two multiply methods compared in `multiply.asm`.
-
 `programs/` holds three working programs, all verified:
 
 | File | What it does | Result |
@@ -319,6 +315,16 @@ HLT                stop
 | `subroutine.asm` | CALL / RET and PUSH / POP | 10, 42, 42 ✓ |
 
 ---
+
+## Outcomes beyond CO1 that this code also covers
+
+CO1 is marked in the sections above. The rest are covered as follows.
+
+| Outcome | What it asks for | Where it is in this document |
+|---|---|---|
+| **CO2** | Develop assembly language programs | `asm/Assembler.cpp` — the two-pass assembler · `programs/` — six working programs, listed under Sample programs |
+| **CO3** | Illustrate arithmetic using computer arithmetic algorithms | `ALU.cpp` — carry from a 32-bit scratch value, signed overflow from the sign rule, and multiplication done both by add-and-shift and by successive addition |
+| **CO4** | Demonstrate control-signal generation and pipelining | `Instruction.cpp` — the fourteen control lines each instruction asserts. Pipelining itself is not built yet and is listed as planned work |
 
 ## Practicals this covers
 
