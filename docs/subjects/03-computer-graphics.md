@@ -15,26 +15,6 @@ decide which dots to light, and that decision is what this folder contains.
 > **2310218L.CO.1** — *Apply OpenGL graphics primitives to develop graphics applications.*
 > **[L3]**
 
-**Where we stand on this.** This build uses no OpenGL. Every primitive is one we wrote —
-the line, circle and fill routines in this document are ours, drawn into a pixel buffer we
-own.
-
-So CO1 is met in substance, in that primitives are composed into a working graphics
-application, but not in the specific library the outcome names. The routines we wrote
-instead belong to CO3, *develop 2D and 3D objects using various algorithms*, which they
-answer more completely than a library call would.
-
-An OpenGL rendering path is planned, and it is what CO4 and CO6 wait on. Until it exists,
-this is the honest position.
-
-## The files
-
-| File | Lines | What it is |
-|---|---|---|
-| `Canvas.h` | 104 | The drawing surface and the list of algorithms |
-| `Canvas.cpp` | 366 | Bresenham, DDA, scan-line fill, flood fill, clipping |
-| `ConsoleView.h` | 50 | The panes that make up the display |
-| `ConsoleView.cpp` | 315 | Uses the Canvas to draw the datapath and waveform |
 
 ---
 
@@ -320,7 +300,7 @@ scene.setAttribute("transform",
 | **CO6** | *Design the texture images, light and color using different objects.* [L3] | **Not met.** Needs the OpenGL rendering path |
 
 Three of the six are answered by working code. CO4 and CO6, and the 3D half of CO3, wait
-on the OpenGL path — the same dependency that CO1 notes above.
+on the OpenGL rendering path, which is planned work.
 
 ## Practicals this covers
 

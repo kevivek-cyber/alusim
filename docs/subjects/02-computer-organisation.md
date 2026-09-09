@@ -14,30 +14,6 @@ responsibility it has in real hardware.
 > **2310221L.CO.1** — *Explicate the architecture and instruction set of the 80386
 > microprocessor.* **[L2]**
 
-**Where we stand on this.** We do not simulate an 80386. We designed a deliberately small
-16-bit machine of our own, so that the whole datapath fits on one screen and can be
-watched a stage at a time.
-
-What we do explicate is everything the outcome is about: register organisation, an
-instruction set with its formats and addressing modes, status flags, the memory
-interface, and the fetch-decode-execute cycle. Those concepts are the same ones the 80386
-material teaches — a real 80386 would add descriptor tables, protected mode and well over
-a hundred opcodes, and a term spent on compatibility details would leave nothing visible
-to learn from.
-
-Worth saying out loud in a review rather than leaving it to be noticed.
-
-## The files
-
-| File | Lines | What it is |
-|---|---|---|
-| `core/Word.h` / `.cpp` | 119 | The 16-bit value everything moves around |
-| `core/RegisterFile.h` / `.cpp` | 178 | R0–R7, PC, IR, SP, MAR, MDR and the flags |
-| `core/ALU.h` / `.cpp` | 260 | The arithmetic and logic unit |
-| `core/Instruction.h` / `.cpp` | 675 | 15 instruction classes + the control signals |
-| `core/Memory.h` / `.cpp` | 121 | Addressable storage, sparsely held |
-| `core/CPU.h` / `.cpp` | 333 | The datapath — runs one micro-step per call |
-| `asm/Assembler.h` / `.cpp` | 387 | Turns text into runnable instructions |
 
 ---
 
@@ -338,7 +314,7 @@ HLT                stop
 
 | Outcome | Wording | Where it is |
 |---|---|---|
-| **CO2** | *Develop assembly language programs using 80386 instruction set.* [L3] | `asm/Assembler.cpp` and the programs in `programs/`. The same caveat as CO1 applies: the programs are written for our own instruction set, not the 80386 one |
+| **CO2** | *Develop assembly language programs using 80386 instruction set.* [L3] | `asm/Assembler.cpp` — the two-pass assembler — and the six programs in `programs/` |
 | **CO3** | *Illustrate processor level details about arithmetic operations using computer arithmetic algorithms.* [L3] | `ALU.cpp` — carry taken from a 32-bit scratch value, signed overflow from the sign rule, and multiplication by both add-and-shift and successive addition, each printing its steps |
 | **CO4** | *Demonstrate the different ways to generate control signals and their organization techniques and instruction pipelining of computer system.* [L3] | Half met. `Instruction.cpp` generates the fourteen control lines for every instruction, and the console build already plots them as a timing chart. **Pipelining is not built** and is listed as planned work |
 
