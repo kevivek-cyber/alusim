@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datapath Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#FAF8F3;--surface:#FFFFFF;--sunken:#F1EEE6;
+  --line:#E3DED2;--line-2:#C9C2B2;
+  --ink:#1B221E;--ink-2:#4C554F;--muted:#828B84;
+  --accent:#B25E1C;--accent-soft:#FBEAD9;
+  --teal:#0D6A5A;--teal-soft:#DCEDE8;
+  --live:#C2410C;--live-soft:#FDEAE0;
+  --done:#166534;--done-soft:#DCFCE7;
+  --shadow:0 1px 2px rgba(27,34,30,.05),0 10px 24px -14px rgba(27,34,30,.22);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0A0F0D;--surface:#141B18;--sunken:#0E1512;
+  --line:#28352E;--line-2:#3D4E45;
+  --ink:#EDF2EF;--ink-2:#BAC5BF;--muted:#818E87;
+  --accent:#E89B52;--accent-soft:#33230F;
+  --teal:#4CC0A4;--teal-soft:#10312B;
+  --live:#F58A34;--live-soft:#3A2412;
+  --done:#4ADE80;--done-soft:#0F2A1A;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 30px -16px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --ground:#0A0F0D;--surface:#141B18;--sunken:#0E1512;
+  --line:#28352E;--line-2:#3D4E45;
+  --ink:#EDF2EF;--ink-2:#BAC5BF;--muted:#818E87;
+  --accent:#E89B52;--accent-soft:#33230F;
+  --teal:#4CC0A4;--teal-soft:#10312B;
+  --live:#F58A34;--live-soft:#3A2412;
+  --done:#4ADE80;--done-soft:#0F2A1A;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 30px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);overflow:hidden;
+  display:flex;flex-direction:column;
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;font-size:13.5px;line-height:1.5}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;gap:16px;padding:11px 18px 10px;border-bottom:1px solid var(--line);flex:none}
+header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.022em;white-space:nowrap}
+header h1 span{color:var(--accent)}
+header .tagline{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chips{display:flex;gap:6px;margin-left:auto;flex:none}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--teal);background:var(--teal-soft);
+  border-radius:2px;padding:3px 8px;white-space:nowrap}
+.hbtn{font:inherit;font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
+  border-radius:3px;padding:6px 11px;cursor:pointer;white-space:nowrap;flex:none}
+.hbtn:hover{border-color:var(--line-2);color:var(--ink)}
+.hbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- narration + phases strip ---------- */
+.strip{display:flex;align-items:center;gap:14px;padding:9px 18px;flex:none;
+  border-bottom:1px solid var(--line);background:var(--surface)}
+.narrate{display:flex;align-items:baseline;gap:12px;min-width:0;flex:1;overflow:hidden;
+  border-left:3px solid var(--accent);padding-left:12px}
+.n-step{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);white-space:nowrap;flex:none}
+.n-body{min-width:0}
+.n-main{font-size:14.5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n-sub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes slidein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.narrate.fresh .n-body{animation:slidein .3s cubic-bezier(.2,.7,.3,1)}
+.phases{display:flex;align-items:center;gap:5px;flex:none}
+.phase{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  padding:4px 9px;border-radius:2px;background:var(--sunken);border:1px solid var(--line);color:var(--muted);
+  transition:background .2s,color .2s,border-color .2s,transform .2s}
+.phase.on{background:var(--accent);border-color:var(--accent);color:var(--ground);font-weight:600;transform:translateY(-2px)}
+.phase-arrow{color:var(--line-2);font-size:10px;transition:color .2s}
+.phase-arrow.lit{color:var(--accent)}
+
+/* ---------- app grid ---------- */
+.app{flex:1;min-height:0;display:grid;grid-template-columns:296px minmax(0,1fr) 236px;
+  gap:12px;padding:12px 18px 14px}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:3px;
+  display:flex;flex-direction:column;min-height:0}
+.panel-head{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--line);flex:none}
+.panel-head h2{margin:0;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.co{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--teal);
+  background:var(--teal-soft);border-radius:2px;padding:2px 6px;white-space:nowrap}
+.panel-body{padding:11px;overflow:auto;min-height:0}
+.grow{flex:1;min-height:0}
+
+/* ---------- stage ---------- */
+.stage{box-shadow:var(--shadow)}
+.stage svg{display:block;width:100%;height:100%;background:var(--sunken)}
+.svgwrap{flex:1;min-height:0;display:flex}
+.stage-foot{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:8px 11px;flex:none;
+  border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+.key{display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.pulse{animation:blip 1.5s ease-in-out infinite}
+@keyframes blip{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.78)}}
+.zoomwrap{display:flex;align-items:center;gap:7px;margin-left:auto}
+.zoomwrap input{width:88px;accent-color:var(--accent)}
+.blk{transition:stroke .25s,stroke-width .25s}
+.blk.hot{stroke:var(--live);stroke-width:2.6}
+.wire{transition:stroke .3s,stroke-width .3s}
+.wire.hot{stroke:var(--live);stroke-width:3.4}
+@keyframes lamp{0%{r:7;opacity:1}100%{r:20;opacity:0}}
+#zRing.ping{animation:lamp .7s ease-out}
+
+/* ---------- controls ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:6px;padding:10px 11px;border-bottom:1px solid var(--line);flex:none}
+button.op{font:inherit;font-size:12px;font-weight:500;background:var(--sunken);color:var(--ink);
+  border:1px solid var(--line-2);border-radius:3px;padding:7px 10px;cursor:pointer;
+  transition:transform .12s,border-color .18s,color .18s}
+button.op:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button.op:active:not(:disabled){transform:scale(.95)}
+button.op:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.op:disabled{opacity:.38;cursor:not-allowed}
+button.op.primary{background:var(--accent);border-color:var(--accent);color:var(--ground);font-weight:600}
+button.op.primary:hover:not(:disabled){filter:brightness(1.07);color:var(--ground)}
+button.op.playing{background:var(--live);border-color:var(--live);color:var(--ground)}
+.pickrow{display:flex;gap:7px;align-items:center;padding:0 11px 10px;flex:none}
+select{font:inherit;font-size:12px;background:var(--sunken);color:var(--ink);border:1px solid var(--line-2);
+  border-radius:3px;padding:6px 8px;flex:1;min-width:0;cursor:pointer}
+select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.speed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap}
+.speed input{width:62px;accent-color:var(--accent)}
+textarea{width:100%;height:100%;min-height:96px;resize:none;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;line-height:1.6;background:var(--sunken);color:var(--ink);
+  border:1px solid var(--line);border-radius:3px;padding:9px}
+textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.srcwrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:11px;gap:8px}
+.srcfoot{display:flex;gap:7px;align-items:center;flex:none;flex-wrap:wrap}
+.kbd{font-family:"IBM Plex Mono",monospace;font-size:9.5px;background:var(--sunken);
+  border:1px solid var(--line-2);border-bottom-width:2px;border-radius:3px;padding:1px 4px;color:var(--ink-2)}
+.hint{font-size:11px;color:var(--muted)}
+.err{color:var(--live);font-size:11.5px;flex:none}
+
+/* ---------- data panes ---------- */
+.listing{font-family:"IBM Plex Mono",monospace;font-size:11px;position:relative}
+.listing .row{display:flex;gap:9px;padding:2px 6px;border-radius:2px;white-space:pre;
+  border-left:2px solid transparent;transition:background .25s,border-color .25s}
+.listing .adr{color:var(--muted);font-variant-numeric:tabular-nums}
+.listing .row.cur{background:var(--accent-soft);border-left-color:var(--accent)}
+.listing .row.cur .adr{color:var(--accent);font-weight:600}
+.regs{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.reg{padding:5px 7px;border:1px solid var(--line);border-radius:3px;background:var(--sunken);
+  transition:background .4s,border-color .4s,transform .25s}
+.reg .rname{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted);letter-spacing:.06em}
+.reg .rdec{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;
+  font-variant-numeric:tabular-nums;line-height:1.2;transition:color .4s}
+.reg .rhex{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted)}
+.reg.hot{background:var(--live-soft);border-color:var(--live);transform:translateY(-2px)}
+.reg.hot .rdec{color:var(--live)}
+.sysrow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.tbl{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:11px}
+.tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;padding:0 0 5px}
+.tbl td{padding:3px 0;font-variant-numeric:tabular-nums;border-top:1px solid var(--line)}
+.tbl td:last-child{text-align:right}
+@keyframes rowflash{from{background:var(--live-soft)}to{background:transparent}}
+.tbl tr.hot td{color:var(--live);animation:rowflash 1.1s ease-out}
+.empty{color:var(--muted);font-size:11.5px;font-style:italic;margin:2px 0}
+.out{font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+.out div{padding:3px 0;border-top:1px solid var(--line);animation:slidein .38s cubic-bezier(.2,.7,.3,1)}
+.out div:first-child{border-top:0}
+
+/* ---------- about overlay ---------- */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(10,15,13,.55);
+  backdrop-filter:blur(3px);display:none;padding:34px 22px}
+.overlay.open{display:flex;justify-content:center;align-items:flex-start}
+.sheet{background:var(--ground);border:1px solid var(--line-2);border-radius:5px;box-shadow:var(--shadow);
+  width:min(1080px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.sheet-head{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);flex:none}
+.sheet-head h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.tabs{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.tab{font:inherit;font-size:12px;background:var(--surface);border:1px solid var(--line);color:var(--muted);
+  border-radius:3px;padding:6px 11px;cursor:pointer}
+.tab.on{background:var(--accent);border-color:var(--accent);color:var(--ground);font-weight:600}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sheet-body{padding:20px;overflow:auto;min-height:0}
+.tabpane{display:none}
+.tabpane.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px}
+.stat{background:var(--surface);padding:12px 14px}
+.stat .v{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:13px;color:var(--muted);font-weight:400}
+.stat .k{font-size:10.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:11px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 15px}
+.card h4{margin:0 0 3px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 6px;border-radius:2px;white-space:nowrap}
+.tag.done{background:var(--done-soft);color:var(--done)}
+.tag.wip{background:var(--accent-soft);color:var(--accent)}
+.tag.next{background:var(--sunken);color:var(--muted);border:1px solid var(--line)}
+.card p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.checks{list-style:none;margin:9px 0 0;padding:0;font-size:12px}
+.checks li{padding:2px 0 2px 19px;position:relative;color:var(--ink-2)}
+.checks li::before{content:"";position:absolute;left:2px;top:8px;width:8px;height:8px;border-radius:2px;background:var(--done)}
+.checks li.todo{color:var(--muted)}
+.checks li.todo::before{background:transparent;border:1.5px solid var(--line-2)}
+.card.subj{border-top:3px solid var(--accent)}
+.cards .card.subj:nth-child(2){border-top-color:var(--teal)}
+.cards .card.subj:nth-child(3){border-top-color:var(--live)}
+.cards .card.subj:nth-child(4){border-top-color:var(--done)}
+.subj .code{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted);letter-spacing:.08em}
+.subj dl{margin:7px 0 0;font-size:12px}
+.subj dt{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--accent);margin-top:8px}
+.cards .card.subj:nth-child(2) dt{color:var(--teal)}
+.cards .card.subj:nth-child(3) dt{color:var(--live)}
+.cards .card.subj:nth-child(4) dt{color:var(--done)}
+.subj dd{margin:1px 0 0;color:var(--muted)}
+.cover{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.cover th{background:var(--sunken);text-align:left;padding:8px 11px;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+.cover td{padding:8px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+.cover tr:last-child td{border-bottom:0;background:var(--sunken);font-weight:600}
+.cover .n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap}
+.bar{height:5px;background:var(--sunken);border-radius:3px;overflow:hidden;margin-top:5px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--accent)}
+.pcodes{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted)}
+.rt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:6px}
+.card ul.plain{margin:0;padding-left:16px;font-size:12px;color:var(--muted)}
+.card ul.plain li{margin:4px 0}
+.foot-note{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.foot-note strong{color:var(--ink-2)}
+
+/* narrow screens: allow normal scrolling rather than squashing */
+@media (max-width:1120px){
+  body{overflow:auto;height:auto;min-height:100%}
+  .app{grid-template-columns:1fr 1fr;padding-bottom:22px}
+  .stage{grid-column:1/-1;order:-1;min-height:400px}
+  .n-main,.n-sub{white-space:normal}
+  .phases{display:none}
+}
+@media (max-width:720px){.app{grid-template-columns:1fr}.chips{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<header>
+  <h1>Datapath<span>Bench</span></h1>
+  <span class="tagline">A 16-bit CPU you can step through one instruction at a time</span>
+  <div class="chips">
+    <span class="chip">20/36 practicals</span>
+    <span class="chip">4 subjects</span>
+    <span class="chip">0 ready-made containers</span>
+  </div>
+  <button class="hbtn" id="aboutBtn" type="button">About this project</button>
+  <button class="hbtn" id="themeBtn" type="button">Theme</button>
+</header>
+
+<div class="strip">
+  <div class="narrate" id="narrate">
+    <span class="n-step mono" id="nStep">ready</span>
+    <div class="n-body">
+      <div class="n-main" id="nMain">Press Play to watch it run.</div>
+      <div class="n-sub" id="nSub">This program adds the numbers 1 to 5 and prints the answer.</div>
+    </div>
+  </div>
+  <div class="phases">
+    <span class="phase" id="phF">Fetch</span><span class="phase-arrow" id="ar1">&rarr;</span>
+    <span class="phase" id="phD">Decode</span><span class="phase-arrow" id="ar2">&rarr;</span>
+    <span class="phase" id="phE">Execute</span><span class="phase-arrow" id="ar3">&rarr;</span>
+    <span class="phase" id="phW">Writeback</span>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- LEFT -->
+  <div class="col">
+    <section class="panel grow">
+      <div class="panel-head"><h2>Program</h2><span class="co">COAL CO2 &middot; assembly</span></div>
+      <div class="controls">
+        <button class="op primary" id="btnPlay" type="button">&#9654; Play</button>
+        <button class="op" id="btnStep" type="button">Step</button>
+        <button class="op" id="btnBack" type="button">Back</button>
+        <button class="op" id="btnRun" type="button">End</button>
+        <button class="op" id="btnReset" type="button">Reset</button>
+      </div>
+      <div class="pickrow">
+        <select id="examples" aria-label="Choose an example program"></select>
+        <label class="speed">speed<input type="range" id="speed" min="1" max="10" value="5" aria-label="Playback speed"></label>
+      </div>
+      <div class="srcwrap">
+        <textarea id="src" spellcheck="false" aria-label="Assembly program"></textarea>
+        <div class="err" id="errBox"></div>
+        <div class="srcfoot">
+          <button class="op" id="btnAsm" type="button">Assemble</button>
+          <span class="hint"><span class="kbd">Space</span> step &nbsp;<span class="kbd">P</span> play &nbsp;<span class="kbd">R</span> reset</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="flex:0 0 auto;max-height:34%">
+      <div class="panel-head"><h2>Listing</h2><span class="co">PL CO2 &middot; linked list</span></div>
+      <div class="panel-body"><div class="listing" id="listing"></div></div>
+    </section>
+  </div>
+
+  <!-- CENTRE -->
+  <section class="panel stage">
+    <div class="panel-head"><h2>Inside the CPU</h2><span class="co">CGL CO1 primitives &middot; CO2 transforms</span></div>
+    <div class="svgwrap">
+      <svg id="svg" viewBox="0 0 760 410" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="Diagram of the CPU showing the register file, control unit, memory, ALU and the shared data bus">
+        <g id="scene">
+          <line id="bus" class="wire" x1="46" y1="212" x2="714" y2="212" stroke="var(--line-2)" stroke-width="2.5"/>
+          <text x="46" y="203" class="mono" font-size="10.5" letter-spacing="1.6" fill="var(--muted)">DATA BUS &mdash; the shared wire everything talks over</text>
+          <line id="wReg" class="wire" x1="150" y1="152" x2="150" y2="212" stroke="var(--line-2)" stroke-width="2.5"/>
+          <line id="wCu"  class="wire" x1="380" y1="152" x2="380" y2="212" stroke="var(--line-2)" stroke-width="2.5"/>
+          <line id="wMem" class="wire" x1="606" y1="152" x2="606" y2="212" stroke="var(--line-2)" stroke-width="2.5"/>
+          <line id="wAlu" class="wire" x1="380" y1="212" x2="380" y2="268" stroke="var(--line-2)" stroke-width="2.5"/>
+          <path id="trail" fill="none" stroke="var(--live)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+
+          <rect id="bReg" class="blk" x="46" y="44" width="208" height="108" rx="3" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.6"/>
+          <text x="60" y="64" font-size="10.5" font-weight="600" letter-spacing="1.4" fill="var(--muted)">REGISTER FILE</text>
+          <text x="60" y="79" font-size="10.5" fill="var(--muted)">8 boxes that hold numbers</text>
+          <text id="dR0" x="60" y="102" class="mono" font-size="12.5" fill="var(--ink)">R0 = 0</text>
+          <text id="dR1" x="60" y="121" class="mono" font-size="12.5" fill="var(--ink)">R1 = 0</text>
+          <text id="dR2" x="160" y="102" class="mono" font-size="12.5" fill="var(--ink)">R2 = 0</text>
+          <text id="dR3" x="160" y="121" class="mono" font-size="12.5" fill="var(--ink)">R3 = 0</text>
+
+          <rect id="bCu" class="blk" x="292" y="44" width="176" height="108" rx="3" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.6"/>
+          <text x="306" y="64" font-size="10.5" font-weight="600" letter-spacing="1.4" fill="var(--muted)">CONTROL UNIT</text>
+          <text x="306" y="79" font-size="10.5" fill="var(--muted)">reads &amp; directs</text>
+          <text id="dPc" x="306" y="102" class="mono" font-size="12.5" fill="var(--ink)">line 0</text>
+          <text id="dIr" x="306" y="121" class="mono" font-size="12" fill="var(--accent)">&mdash;</text>
+
+          <rect id="bMem" class="blk" x="506" y="44" width="208" height="108" rx="3" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.6"/>
+          <text x="520" y="64" font-size="10.5" font-weight="600" letter-spacing="1.4" fill="var(--muted)">MEMORY</text>
+          <text x="520" y="79" font-size="10.5" fill="var(--muted)">longer-term storage</text>
+          <text id="dMemA" x="520" y="102" class="mono" font-size="12.5" fill="var(--ink)">no access yet</text>
+          <text id="dMemN" x="520" y="121" class="mono" font-size="12" fill="var(--muted)">0 cells used</text>
+
+          <rect id="bAlu" class="blk" x="272" y="268" width="216" height="110" rx="3" fill="var(--surface)" stroke="var(--line-2)" stroke-width="1.6"/>
+          <text x="286" y="288" font-size="10.5" font-weight="600" letter-spacing="1.4" fill="var(--muted)">ALU &mdash; THE CALCULATOR</text>
+          <text id="dAluA" x="286" y="311" class="mono" font-size="12.5" fill="var(--ink)">A = 0</text>
+          <text id="dAluB" x="286" y="330" class="mono" font-size="12.5" fill="var(--ink)">B = 0</text>
+          <text id="dAluOp" x="286" y="352" class="mono" font-size="12.5" fill="var(--muted)">waiting</text>
+          <text id="dAluR" x="286" y="370" class="mono" font-size="12.5" fill="var(--accent)">result &mdash;</text>
+
+          <circle id="zRing" cx="452" cy="352" r="7" fill="none" stroke="var(--live)" stroke-width="2" opacity="0"/>
+          <circle id="zLamp" cx="452" cy="352" r="7" fill="var(--sunken)" stroke="var(--line-2)" stroke-width="1.4"/>
+          <text x="452" y="374" text-anchor="middle" font-size="9.5" fill="var(--muted)">zero</text>
+
+          <g id="packet" opacity="0">
+            <circle r="15" fill="var(--live)"/>
+            <text id="packetTxt" y="4" text-anchor="middle" class="mono" font-size="11" font-weight="600" fill="var(--ground)">0</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="stage-foot">
+      <span class="key"><span class="dot pulse" style="background:var(--live)"></span> active right now</span>
+      <span class="key"><span class="dot" style="background:var(--line-2)"></span> idle</span>
+      <label class="zoomwrap">zoom<input type="range" id="zoom" min="70" max="140" value="100" aria-label="Zoom the diagram"></label>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <div class="col">
+    <section class="panel" style="flex:0 0 auto">
+      <div class="panel-head"><h2>Registers</h2><span class="co">PL CO1 &middot; array</span></div>
+      <div class="panel-body">
+        <div class="regs" id="regs"></div>
+        <div class="sysrow">
+          <div class="reg"><div class="rname">NEXT LINE</div><div class="rdec" id="rPC">0</div></div>
+          <div class="reg"><div class="rname">ZERO FLAG</div><div class="rdec" id="rZ">off</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel grow">
+      <div class="panel-head"><h2>Memory</h2><span class="co">PL CO1 &middot; array</span></div>
+      <div class="panel-body" id="memBody"></div>
+    </section>
+    <section class="panel grow">
+      <div class="panel-head"><h2>Output</h2><span class="co">PL CO2 &middot; linked list</span></div>
+      <div class="panel-body" id="outBody"></div>
+    </section>
+  </div>
+</div>
+
+<!-- ================= ABOUT OVERLAY ================= -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="About this project">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>About this project</h2>
+      <div class="tabs">
+        <button class="tab on" data-pane="p1" type="button">What we built</button>
+        <button class="tab" data-pane="p2" type="button">Subjects</button>
+        <button class="tab" data-pane="p3" type="button">Coverage</button>
+        <button class="tab" data-pane="p4" type="button">Roadmap</button>
+      </div>
+      <button class="hbtn" id="closeBtn" type="button">Close</button>
+    </div>
+    <div class="sheet-body">
+
+      <div class="tabpane on" id="p1">
+        <div class="stats">
+          <div class="stat"><div class="v">20<small>/36</small></div><div class="k">Practicals covered</div></div>
+          <div class="stat"><div class="v">4</div><div class="k">Subjects, one codebase</div></div>
+          <div class="stat"><div class="v">4,102</div><div class="k">Lines of C++</div></div>
+          <div class="stat"><div class="v">14</div><div class="k">Instructions</div></div>
+          <div class="stat"><div class="v">0</div><div class="k">Ready-made containers</div></div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <h4>Simulation engine <span class="tag done">Working</span></h4>
+            <p>The CPU itself, in C++ &mdash; 4,102 lines across 28 files.</p>
+            <ul class="checks">
+              <li>16-bit ALU with zero, carry, overflow, sign flags</li>
+              <li>8 registers plus PC, IR, SP, MAR, MDR</li>
+              <li>Control unit producing a 14-line signal vector</li>
+              <li>Sparse memory &mdash; only written cells stored</li>
+              <li>Fetch &rarr; decode &rarr; execute &rarr; writeback</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Assembler <span class="tag done">Working</span></h4>
+            <p>Turns readable mnemonics into runnable instructions.</p>
+            <ul class="checks">
+              <li>Two passes, with label resolution</li>
+              <li>Decimal, hexadecimal and binary literals</li>
+              <li>Comments, labels, flexible spacing</li>
+              <li>Errors name the exact line</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Data structures <span class="tag done">Working</span></h4>
+            <p>Hand-written &mdash; no <span class="mono">std::stack</span>, <span class="mono">queue</span> or <span class="mono">map</span>.</p>
+            <ul class="checks">
+              <li>Stack &mdash; the CPU call stack</li>
+              <li>Circular queue &mdash; fetch buffer</li>
+              <li>Deque &mdash; 512-step rewind history</li>
+              <li>Hash table &mdash; three collision strategies</li>
+              <li>Linked list &mdash; symbol chains and logs</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Graphics layer <span class="tag done">Working</span></h4>
+            <p>Rasterisation written against a pixel buffer.</p>
+            <ul class="checks">
+              <li>Bresenham line and circle</li>
+              <li>DDA line, kept for comparison</li>
+              <li>Scan-line, boundary and flood fill</li>
+              <li>Cohen&ndash;Sutherland clipping</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>This prototype <span class="tag wip">This page</span></h4>
+            <p>The browser version you are using now.</p>
+            <ul class="checks">
+              <li>Animated transfers with a drawn trail</li>
+              <li>Plain-English narration per instruction</li>
+              <li>Play, step, and step-backward</li>
+              <li>Six worked example programs</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Coming next <span class="tag next">Planned</span></h4>
+            <p>Ordered by value for the effort.</p>
+            <ul class="checks">
+              <li class="todo">Control-signal timing chart</li>
+              <li class="todo">Micro-stepping inside one instruction</li>
+              <li class="todo">Subroutines &mdash; CALL and RET</li>
+              <li class="todo">Pipelining with visible stalls</li>
+              <li class="todo">Breakpoints and watchpoints</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="p2">
+        <p class="foot-note" style="margin:0 0 14px;padding:0;border:0">
+          Not four assignments glued together. Remove any one subject and the project stops existing.</p>
+        <div class="cards">
+          <div class="card subj">
+            <div class="code">2310214L</div><h4>Data Structures</h4>
+            <dl><dt>Stack</dt><dd>Is the CPU call stack. CALL pushes the return address; RET pops it back.</dd>
+              <dt>Circular queue</dt><dd>The fetch line. Wraps at the end instead of shifting everything.</dd>
+              <dt>Hash table</dt><dd>The symbol table &mdash; turns <span class="mono">loop</span> into line 3 instantly.</dd>
+              <dt>Deque</dt><dd>Holds 512 past steps so execution can run backwards.</dd></dl>
+          </div>
+          <div class="card subj">
+            <div class="code">2310221L</div><h4>Computer Organisation</h4>
+            <dl><dt>ALU</dt><dd>A pure function: an operation and two values in, a result plus four flags out.</dd>
+              <dt>Control unit</dt><dd>Turns each instruction into fourteen on/off signals, every cycle.</dd>
+              <dt>Instruction cycle</dt><dd>Fetch, decode, execute, writeback &mdash; steppable one stage at a time.</dd>
+              <dt>Arithmetic</dt><dd>Add-and-shift multiply, printed as a step-by-step trace.</dd></dl>
+          </div>
+          <div class="card subj">
+            <div class="code">2310218L</div><h4>Computer Graphics</h4>
+            <dl><dt>Bresenham</dt><dd>Every wire drawn dot by dot, integer arithmetic only.</dd>
+              <dt>Scan-line fill</dt><dd>Finds where each row enters and leaves a shape, fills between.</dd>
+              <dt>Clipping</dt><dd>Cohen&ndash;Sutherland cuts wires cleanly at the viewport edge.</dd>
+              <dt>Transforms</dt><dd>Translation moves the value along the bus; scaling drives the zoom.</dd></dl>
+          </div>
+          <div class="card subj">
+            <div class="code">2310261L</div><h4>Object-Oriented C++</h4>
+            <dl><dt>Polymorphism</dt><dd>The CPU calls <span class="mono">execute()</span> without knowing which instruction it holds.</dd>
+              <dt>Inheritance</dt><dd>Fifteen instruction classes from one abstract base.</dd>
+              <dt>Templates</dt><dd>One <span class="mono">Stack&lt;T&gt;</span> serves the call stack and the evaluator.</dd>
+              <dt>Exceptions</dt><dd>A bad opcode reports itself instead of crashing.</dd></dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="p3">
+        <p class="foot-note" style="margin:0 0 14px;padding:0;border:0">
+          36 lab practicals across four subjects. 20 are covered by what already runs.</p>
+        <div style="overflow-x:auto">
+          <table class="cover">
+            <thead><tr><th>Subject</th><th class="n">Total</th><th>Covered now</th><th>Next tier</th><th>Later</th></tr></thead>
+            <tbody>
+              <tr><td>Data Structures<div class="bar"><i style="width:27%"></i></div></td>
+                  <td class="n">11</td><td class="n">3<div class="pcodes">P6, P8, P11</div></td>
+                  <td class="pcodes">P1&ndash;P5, P7, P9, P10</td><td class="pcodes">&mdash;</td></tr>
+              <tr><td>Computer Organisation<div class="bar"><i style="width:29%"></i></div></td>
+                  <td class="n">7</td><td class="n">2<div class="pcodes">P1, P2</div></td>
+                  <td class="pcodes">P3, P4, P5, P6</td><td class="pcodes">P7</td></tr>
+              <tr><td>Computer Graphics<div class="bar"><i style="width:50%"></i></div></td>
+                  <td class="n">6</td><td class="n">3<div class="pcodes">P2, P3, P5</div></td>
+                  <td class="pcodes">&mdash;</td><td class="pcodes">P1, P4, P6</td></tr>
+              <tr><td>Object-Oriented C++<div class="bar"><i style="width:100%"></i></div></td>
+                  <td class="n">12</td><td class="n">12<div class="pcodes">P1 &ndash; P12, all</div></td>
+                  <td class="pcodes">&mdash;</td><td class="pcodes">&mdash;</td></tr>
+              <tr><td>Total</td><td class="n">36</td><td class="n">20</td><td class="n">&rarr; 32</td><td class="n">&rarr; 36</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="p4">
+        <div class="cards">
+          <div class="card"><div class="rt">Tier 1 &middot; do next</div><h4>Cheap, high impact</h4>
+            <ul class="plain">
+              <li><strong>Control-signal timing chart.</strong> The signals already exist &mdash; we only plot them.</li>
+              <li><strong>Micro-stepping.</strong> Step inside one instruction, stage by stage.</li>
+              <li><strong>Subroutines.</strong> CALL and RET, with the stack visible.</li>
+              <li><strong>Hash-backed labels.</strong> Replaces the array scan.</li>
+            </ul></div>
+          <div class="card"><div class="rt">Tier 2 &middot; this term</div><h4>Substantial additions</h4>
+            <ul class="plain">
+              <li><strong>Pipelining.</strong> Watch a bubble appear when a hazard stalls the pipe.</li>
+              <li><strong>Breakpoints.</strong> Stop when a register hits a value.</li>
+              <li><strong>Cache simulation.</strong> Live hit and miss counts.</li>
+              <li><strong>Wider arithmetic.</strong> 64-bit, hex&harr;BCD, strings.</li>
+            </ul></div>
+          <div class="card"><div class="rt">Tier 3 &middot; ambitious</div><h4>If time allows</h4>
+            <ul class="plain">
+              <li><strong>Two cores, one memory.</strong> Show a race condition live.</li>
+              <li><strong>Two instruction sets.</strong> CISC and RISC compared on the same task.</li>
+              <li><strong>Export to Verilog.</strong> Towards real hardware.</li>
+            </ul></div>
+        </div>
+      </div>
+
+      <p class="foot-note">
+        <strong>Scope.</strong> Limited on purpose to CO1 and CO2 of each subject. Labels are found by scanning
+        an array rather than a hash table, because hashing is PL&nbsp;CO5. There is no call stack here, so CALL
+        and RET are absent &mdash; stack and queue are PL&nbsp;CO3. There is no control-signal chart, which is
+        COAL&nbsp;CO4. Shapes use graphics primitives rather than our own Bresenham routines, which are CGL&nbsp;CO3.<br><br>
+        <strong>Team.</strong> Vivek Dhamale &middot; Pranjal Bhandari &middot; Sanika Patil &middot; Mrudula Bongulwar
+        &nbsp;|&nbsp; <strong>Guide.</strong> Mrs. Jaya S. Mane, Assistant Professor, Software Engineering
+        Department, MIT Academy of Engineering, Alandi, Pune.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- PL CO2 : linked structures ---------- */
+function LinkedList(){this.head=null;this.tail=null;this.size=0;}
+LinkedList.prototype.push=function(v){var n={value:v,next:null};
+  if(!this.tail){this.head=this.tail=n;}else{this.tail.next=n;this.tail=n;}this.size++;};
+LinkedList.prototype.toArray=function(){var o=[],n=this.head;while(n){o.push(n.value);n=n.next;}return o;};
+LinkedList.prototype.clear=function(){this.head=this.tail=null;this.size=0;};
+
+function DoublyList(){this.head=null;this.tail=null;this.size=0;}
+DoublyList.prototype.push=function(v){var n={value:v,prev:this.tail,next:null};
+  if(!this.tail){this.head=this.tail=n;}else{this.tail.next=n;this.tail=n;}this.size++;};
+DoublyList.prototype.popBack=function(){if(!this.tail)return null;var n=this.tail;
+  this.tail=n.prev;if(this.tail)this.tail.next=null;else this.head=null;this.size--;return n.value;};
+DoublyList.prototype.popFront=function(){if(!this.head)return null;var n=this.head;
+  this.head=n.next;if(this.head)this.head.prev=null;else this.tail=null;this.size--;return n.value;};
+DoublyList.prototype.clear=function(){this.head=this.tail=null;this.size=0;};
+
+/* ---------- COAL CO1 / PL CO1 : the machine ---------- */
+var NREG=8, MEMSIZE=0x100;
+var regFile, memCells, pcReg, irText, zFlag, isHalted, stepCount;
+var progCode=[], progList=new LinkedList(), outLog=new LinkedList(), cycleLog=new DoublyList();
+var lastWrite=-1, lastMem=-1, moveInfo=null;
+var aluA=0, aluB=0, aluR=null, aluOpName="waiting";
+var narrMain="", narrSub="", prevZ=0;
+
+function resetMachine(){
+  regFile=new Array(NREG); for(var i=0;i<NREG;i++) regFile[i]=0;
+  memCells=new Array(MEMSIZE); for(var j=0;j<MEMSIZE;j++) memCells[j]=null;
+  pcReg=0; irText="—"; zFlag=0; prevZ=0; isHalted=false; stepCount=0;
+  lastWrite=-1; lastMem=-1; moveInfo=null;
+  aluA=0;aluB=0;aluR=null;aluOpName="waiting";
+  outLog.clear(); cycleLog.clear();
+  narrMain="Press Play to watch it run, or Step for one instruction.";
+  narrSub=currentBlurb;
+}
+function hex(v){return "0x"+(v&0xFFFF).toString(16).toUpperCase().padStart(4,"0");}
+
+/* ---------- COAL CO2 : assembler ---------- */
+var labNames=[], labAddrs=[];
+function findLabel(n){for(var i=0;i<labNames.length;i++) if(labNames[i]===n) return labAddrs[i];return -1;}
+function parseVal(tok,ln){
+  if(tok.charAt(0)==="#") tok=tok.slice(1);
+  var l=findLabel(tok); if(l>=0) return l;
+  if(/^0[xX][0-9a-fA-F]+$/.test(tok)) return parseInt(tok.slice(2),16)&0xFFFF;
+  if(/^0[bB][01]+$/.test(tok)) return parseInt(tok.slice(2),2)&0xFFFF;
+  if(/^-?\d+$/.test(tok)) return parseInt(tok,10)&0xFFFF;
+  throw new Error("line "+ln+": '"+tok+"' is not a number or a known label");
+}
+function parseReg(tok,ln){
+  var m=/^[rR]([0-7])$/.exec(tok);
+  if(!m) throw new Error("line "+ln+": '"+tok+"' is not a register (use R0 to R7)");
+  return parseInt(m[1],10);
+}
+function assemble(text){
+  labNames=[];labAddrs=[];progList.clear();
+  var raw=text.split("\n"),rows=[],i,t,c,addr=0;
+  for(i=0;i<raw.length;i++){
+    t=raw[i];c=t.indexOf(";");if(c>=0)t=t.slice(0,c);t=t.trim();if(!t)continue;
+    var col=t.indexOf(":");
+    if(col>=0){var lab=t.slice(0,col).trim();if(lab){labNames.push(lab);labAddrs.push(addr);}
+      t=t.slice(col+1).trim();if(!t)continue;}
+    rows.push({text:t,line:i+1});addr++;
+  }
+  var out=[];
+  for(i=0;i<rows.length;i++){
+    var p=rows[i].text.replace(/[\[\],]/g," ").split(/\s+/).filter(Boolean);
+    var op=p[0].toUpperCase(),a=p[1],b=p[2],ln=rows[i].line,ins;
+    switch(op){
+      case "LOAD": ins={op:op,rd:parseReg(a,ln),imm:parseVal(b,ln)};break;
+      case "LOADM":ins={op:op,rd:parseReg(a,ln),addr:parseVal(b,ln)};break;
+      case "STORE":ins={op:op,rs:parseReg(a,ln),addr:parseVal(b,ln)};break;
+      case "MOV":case "ADD":case "SUB":case "CMP":
+                   ins={op:op,rd:parseReg(a,ln),rs:parseReg(b,ln)};break;
+      case "INC":case "DEC": ins={op:op,rd:parseReg(a,ln)};break;
+      case "OUT":  ins={op:op,rs:parseReg(a,ln)};break;
+      case "JMP":case "JZ":case "JNZ": ins={op:op,target:parseVal(a,ln)};break;
+      case "HLT":  ins={op:op};break;
+      default: throw new Error("line "+ln+": '"+p[0]+"' is not an instruction");
+    }
+    ins.text=rows[i].text.replace(/\s+/g," ");
+    out.push(ins);progList.push({addr:i,text:ins.text});
+  }
+  return out;
+}
+
+/* ---------- execution ---------- */
+function snapshot(){return {r:regFile.slice(),m:memCells.slice(),pc:pcReg,ir:irText,z:zFlag,
+  h:isHalted,s:stepCount,o:outLog.toArray(),nm:narrMain,ns:narrSub};}
+function restore(s){
+  regFile=s.r.slice();memCells=s.m.slice();pcReg=s.pc;irText=s.ir;zFlag=s.z;prevZ=s.z;
+  isHalted=s.h;stepCount=s.s;narrMain=s.nm;narrSub=s.ns;
+  outLog.clear();for(var i=0;i<s.o.length;i++)outLog.push(s.o[i]);
+  lastWrite=-1;lastMem=-1;aluR=null;aluOpName="waiting";
+}
+
+function step(){
+  if(isHalted) return;
+  var ins=progCode[pcReg];
+  if(!ins){isHalted=true;irText="—";narrMain="Reached the end of the program.";narrSub="";render();return;}
+  cycleLog.push(snapshot());
+  while(cycleLog.size>200) cycleLog.popFront();
+
+  prevZ=zFlag;
+  irText=ins.text;lastWrite=-1;lastMem=-1;moveInfo=null;
+  var next=pcReg+1,a,b,r=null,was;
+  aluR=null;aluOpName="waiting";
+
+  switch(ins.op){
+    case "LOAD":
+      regFile[ins.rd]=ins.imm;lastWrite=ins.rd;
+      moveInfo={from:"cu",to:"reg",value:ins.imm};
+      narrMain="Put the number "+ins.imm+" into R"+ins.rd+".";
+      narrSub="LOAD copies a fixed value straight into a register.";break;
+    case "MOV":
+      regFile[ins.rd]=regFile[ins.rs];lastWrite=ins.rd;
+      moveInfo={from:"reg",to:"reg",value:regFile[ins.rd]};
+      narrMain="Copied R"+ins.rs+" ("+regFile[ins.rs]+") into R"+ins.rd+".";
+      narrSub="MOV duplicates a value; the source keeps its value too.";break;
+    case "ADD": case "SUB":
+      a=regFile[ins.rd];b=regFile[ins.rs];was=a;
+      r=(ins.op==="ADD")?(a+b)&0xFFFF:(a-b)&0xFFFF;
+      regFile[ins.rd]=r;lastWrite=ins.rd;zFlag=(r===0)?1:0;
+      aluA=a;aluB=b;aluR=r;aluOpName=(ins.op==="ADD")?"adding":"subtracting";
+      moveInfo={from:"reg",to:"alu",value:r};
+      narrMain=(ins.op==="ADD"?"Added ":"Subtracted ")+"R"+ins.rs+" ("+b+") "+
+        (ins.op==="ADD"?"to":"from")+" R"+ins.rd+" ("+was+"). R"+ins.rd+" is now "+r+".";
+      narrSub="The ALU did the arithmetic and the answer went back into R"+ins.rd+".";break;
+    case "CMP":
+      a=regFile[ins.rd];b=regFile[ins.rs];r=(a-b)&0xFFFF;zFlag=(r===0)?1:0;
+      aluA=a;aluB=b;aluR=r;aluOpName="comparing";
+      moveInfo={from:"reg",to:"alu",value:r};
+      narrMain="Compared R"+ins.rd+" ("+a+") with R"+ins.rs+" ("+b+"). They are "+(zFlag?"equal":"different")+".";
+      narrSub="CMP subtracts but throws the answer away — it only sets the zero flag.";break;
+    case "INC": case "DEC":
+      a=regFile[ins.rd];r=(ins.op==="INC")?(a+1)&0xFFFF:(a-1)&0xFFFF;
+      regFile[ins.rd]=r;lastWrite=ins.rd;zFlag=(r===0)?1:0;
+      aluA=a;aluB=1;aluR=r;aluOpName=(ins.op==="INC")?"adding 1":"subtracting 1";
+      moveInfo={from:"reg",to:"alu",value:r};
+      narrMain=(ins.op==="INC"?"Increased":"Decreased")+" R"+ins.rd+" by 1. It went from "+a+" to "+r+".";
+      narrSub="A counter usually moves one step at a time like this.";break;
+    case "STORE":
+      memCells[ins.addr&0xFF]=regFile[ins.rs];lastMem=ins.addr&0xFF;
+      moveInfo={from:"reg",to:"mem",value:regFile[ins.rs]};
+      narrMain="Saved R"+ins.rs+" ("+regFile[ins.rs]+") into memory at "+hex(ins.addr)+".";
+      narrSub="Registers are few and fast; memory is large and holds things for later.";break;
+    case "LOADM":
+      regFile[ins.rd]=memCells[ins.addr&0xFF]||0;lastWrite=ins.rd;lastMem=ins.addr&0xFF;
+      moveInfo={from:"mem",to:"reg",value:regFile[ins.rd]};
+      narrMain="Read "+regFile[ins.rd]+" from memory at "+hex(ins.addr)+" into R"+ins.rd+".";
+      narrSub="This is the reverse of STORE.";break;
+    case "OUT":
+      outLog.push("R"+ins.rs+"  =  "+regFile[ins.rs]);
+      moveInfo={from:"reg",to:"cu",value:regFile[ins.rs]};
+      narrMain="Printed R"+ins.rs+", which is "+regFile[ins.rs]+".";
+      narrSub="Look at the Output panel on the right.";break;
+    case "JMP":
+      next=ins.target;moveInfo={from:"cu",to:"cu",value:ins.target};
+      narrMain="Jumped to line "+ins.target+".";
+      narrSub="JMP always jumps, no condition attached.";break;
+    case "JZ": case "JNZ":
+      var take=(ins.op==="JZ")?zFlag:!zFlag;
+      if(take){next=ins.target;moveInfo={from:"cu",to:"cu",value:ins.target};}
+      narrMain=take?("Jumped back to line "+ins.target+"."):"Did not jump; carried on to the next line.";
+      narrSub=(ins.op==="JZ"?"JZ jumps only when the last comparison was equal."
+                            :"JNZ jumps only when the last comparison was different.")+
+              " The zero flag is "+(zFlag?"on":"off")+".";break;
+    case "HLT":
+      isHalted=true;narrMain="Stopped. The program is finished.";narrSub="HLT halts the machine.";break;
+  }
+  pcReg=next;stepCount++;
+  render(true);
+  if(moveInfo) animate(moveInfo);
+  runPhases();
+}
+
+function stepBack(){
+  var s=cycleLog.popBack(); if(!s) return;
+  restore(s);
+  narrMain="Stepped back one instruction.";
+  narrSub="Everything is exactly as it was — the history is a doubly linked list.";
+  render(true);
+}
+
+/* ---------- CGL CO2 : translation, scaling, trail ---------- */
+var NODE={reg:{x:150,y:152},cu:{x:380,y:152},mem:{x:606,y:152},alu:{x:380,y:268}};
+var BUSY=212;
+var packet=document.getElementById("packet");
+var packetTxt=document.getElementById("packetTxt");
+var trail=document.getElementById("trail");
+var animId=null, phaseTimers=[], wireTimer=null;
+var BOX={reg:"bReg",cu:"bCu",mem:"bMem",alu:"bAlu"};
+var WIRE={reg:"wReg",cu:"wCu",mem:"wMem",alu:"wAlu"};
+function reduced(){return window.matchMedia("(prefers-reduced-motion: reduce)").matches;}
+
+function clearHighlights(){
+  ["bReg","bCu","bMem","bAlu","wReg","wCu","wMem","wAlu","bus"].forEach(function(id){
+    document.getElementById(id).classList.remove("hot");});
+}
+
+function animate(mv){
+  if(reduced()) return;
+  var A=NODE[mv.from],B=NODE[mv.to];
+  if(!A||!B) return;
+  var pts=(mv.from===mv.to)?[{x:A.x,y:A.y},{x:A.x,y:BUSY},{x:A.x,y:A.y}]
+                           :[{x:A.x,y:A.y},{x:A.x,y:BUSY},{x:B.x,y:BUSY},{x:B.x,y:B.y}];
+  var segs=[],total=0,i;
+  for(i=0;i<pts.length-1;i++){var d=Math.hypot(pts[i+1].x-pts[i].x,pts[i+1].y-pts[i].y);segs.push(d);total+=d;}
+
+  clearHighlights();
+  if(wireTimer) clearTimeout(wireTimer);
+  document.getElementById(BOX[mv.from]).classList.add("hot");
+  document.getElementById(BOX[mv.to]).classList.add("hot");
+  document.getElementById(WIRE[mv.from]).classList.add("hot");
+  document.getElementById(WIRE[mv.to]).classList.add("hot");
+  if(mv.from!==mv.to) document.getElementById("bus").classList.add("hot");
+
+  var d="M"+pts[0].x+","+pts[0].y;
+  for(i=1;i<pts.length;i++) d+="L"+pts[i].x+","+pts[i].y;
+  trail.setAttribute("d",d);
+  trail.style.strokeDasharray=total;
+  trail.style.strokeDashoffset=total;
+  trail.setAttribute("opacity","0.85");
+
+  packetTxt.textContent=(mv.value&0xFFFF);
+  if(animId) cancelAnimationFrame(animId);
+  var t0=null,DUR=640;
+  function frame(ts){
+    if(t0===null)t0=ts;
+    var k=Math.min(1,(ts-t0)/DUR), e=1-Math.pow(1-k,2.2);
+    var trav=e*total,acc=0,idx=0;
+    while(idx<segs.length-1&&acc+segs[idx]<trav){acc+=segs[idx];idx++;}
+    var lo=segs[idx]?(trav-acc)/segs[idx]:0;
+    packet.setAttribute("transform","translate("+
+      (pts[idx].x+(pts[idx+1].x-pts[idx].x)*lo)+","+
+      (pts[idx].y+(pts[idx+1].y-pts[idx].y)*lo)+")");
+    packet.setAttribute("opacity",k<.88?"1":String((1-k)/.12));
+    trail.style.strokeDashoffset=total*(1-e);
+    trail.setAttribute("opacity",String(0.85*(k<.7?1:(1-k)/.3)));
+    if(k<1) animId=requestAnimationFrame(frame);
+    else{packet.setAttribute("opacity","0");trail.setAttribute("opacity","0");}
+  }
+  animId=requestAnimationFrame(frame);
+  wireTimer=setTimeout(clearHighlights,DUR+220);
+}
+
+function runPhases(){
+  if(reduced()) return;
+  var ids=["phF","phD","phE","phW"],ars=["ar1","ar2","ar3"],i;
+  for(i=0;i<phaseTimers.length;i++) clearTimeout(phaseTimers[i]);
+  phaseTimers=[];
+  ids.forEach(function(id){document.getElementById(id).classList.remove("on");});
+  ars.forEach(function(id){document.getElementById(id).classList.remove("lit");});
+  ids.forEach(function(id,k){
+    phaseTimers.push(setTimeout(function(){
+      ids.forEach(function(j){document.getElementById(j).classList.remove("on");});
+      document.getElementById(id).classList.add("on");
+      if(k>0) document.getElementById(ars[k-1]).classList.add("lit");
+      if(k===3) phaseTimers.push(setTimeout(function(){
+        document.getElementById(id).classList.remove("on");
+        ars.forEach(function(j){document.getElementById(j).classList.remove("lit");});
+      },400));
+    },k*165));
+  });
+}
+
+document.getElementById("zoom").addEventListener("input",function(e){
+  var s=e.target.value/100;
+  document.getElementById("scene").setAttribute(
+    "transform","translate(380,205) scale("+s+") translate(-380,-205)");
+});
+
+/* ---------- render ---------- */
+function $(id){return document.getElementById(id);}
+var regTiles=[], rollId=null, shownOut=0;
+
+function buildRegTiles(){
+  var box=$("regs"); box.innerHTML=""; regTiles=[];
+  for(var i=0;i<NREG;i++){
+    var d=document.createElement("div"); d.className="reg";
+    d.innerHTML='<div class="rname">R'+i+'</div><div class="rdec">0</div><div class="rhex">0x0000</div>';
+    box.appendChild(d);
+    regTiles.push({el:d,dec:d.querySelector(".rdec"),hx:d.querySelector(".rhex")});
+  }
+}
+
+function rollTo(tile,from,to){
+  if(reduced()||from===to){tile.dec.textContent=to;return;}
+  if(rollId) cancelAnimationFrame(rollId);
+  var t0=null,DUR=420;
+  function f(ts){
+    if(t0===null)t0=ts;
+    var k=Math.min(1,(ts-t0)/DUR), e=1-Math.pow(1-k,3);
+    tile.dec.textContent=Math.round(from+(to-from)*e);
+    if(k<1) rollId=requestAnimationFrame(f); else tile.dec.textContent=to;
+  }
+  rollId=requestAnimationFrame(f);
+}
+
+function render(animated){
+  var i;
+  for(i=0;i<NREG;i++){
+    var t=regTiles[i], old=parseInt(t.dec.textContent,10);
+    if(isNaN(old)) old=regFile[i];
+    if(i===lastWrite && animated) rollTo(t,old,regFile[i]);
+    else t.dec.textContent=regFile[i];
+    t.hx.textContent=hex(regFile[i]);
+    if(i===lastWrite) t.el.classList.add("hot"); else t.el.classList.remove("hot");
+  }
+  $("rPC").textContent=pcReg;
+  $("rZ").textContent=zFlag?"ON":"off";
+
+  $("dR0").textContent="R0 = "+regFile[0];
+  $("dR1").textContent="R1 = "+regFile[1];
+  $("dR2").textContent="R2 = "+regFile[2];
+  $("dR3").textContent="R3 = "+regFile[3];
+  $("dPc").textContent="line "+pcReg;
+  $("dIr").textContent=irText.length>20?irText.slice(0,20):irText;
+  $("dAluA").textContent="A = "+aluA;
+  $("dAluB").textContent="B = "+aluB;
+  $("dAluOp").textContent=aluOpName;
+  $("dAluR").textContent=(aluR===null)?"result —":"result "+aluR;
+  $("zLamp").setAttribute("fill",zFlag?"var(--live)":"var(--sunken)");
+  if(zFlag&&!prevZ&&animated&&!reduced()){
+    var ring=$("zRing"); ring.classList.remove("ping");
+    void ring.getBoundingClientRect(); ring.classList.add("ping");
+  }
+
+  var used=0,rows="";
+  for(i=0;i<MEMSIZE;i++){
+    if(memCells[i]!==null){used++;
+      rows+='<tr'+(i===lastMem?' class="hot"':'')+'><td>'+hex(i)+"</td><td>"+memCells[i]+"</td></tr>";}
+  }
+  $("dMemA").textContent=(lastMem<0)?"no access yet":"used "+hex(lastMem);
+  $("dMemN").textContent=used+" cell"+(used===1?"":"s")+" used";
+  $("memBody").innerHTML=used
+    ?'<table class="tbl"><thead><tr><th>address</th><th>value</th></tr></thead><tbody>'+rows+"</tbody></table>"
+    :'<p class="empty">Nothing saved yet. STORE writes here.</p>';
+
+  var ol=outLog.toArray();
+  if(ol.length<shownOut||!$("outBody").querySelector(".out")){
+    $("outBody").innerHTML=ol.length?'<div class="out"></div>'
+      :'<p class="empty">Nothing printed yet. OUT prints here.</p>';
+    shownOut=0;
+  }
+  if(ol.length){
+    var ob=$("outBody").querySelector(".out");
+    if(!ob){$("outBody").innerHTML='<div class="out"></div>';ob=$("outBody").querySelector(".out");}
+    for(i=shownOut;i<ol.length;i++){
+      var row=document.createElement("div"); row.textContent=ol[i]; ob.appendChild(row);
+    }
+    shownOut=ol.length; ob.scrollTop=ob.scrollHeight;
+  }
+
+  var lst=progList.toArray(),lh="";
+  for(i=0;i<lst.length;i++){
+    lh+='<div class="row'+(lst[i].addr===pcReg?" cur":"")+'"><span class="adr">'+
+        String(lst[i].addr).padStart(2," ")+'</span><span>'+lst[i].text+"</span></div>";
+  }
+  $("listing").innerHTML=lh||'<p class="empty">Nothing assembled yet.</p>';
+  var lbox=$("listing").parentNode, cur=$("listing").querySelector(".cur");
+  if(cur){                       /* scroll ONLY this box, never the page */
+    var rTop=cur.offsetTop,rBot=rTop+cur.offsetHeight;
+    if(rTop<lbox.scrollTop) lbox.scrollTop=rTop;
+    else if(rBot>lbox.scrollTop+lbox.clientHeight) lbox.scrollTop=rBot-lbox.clientHeight;
+  }
+
+  $("nStep").textContent=isHalted?"finished":(stepCount?"step "+stepCount:"ready");
+  $("nMain").innerHTML=narrMain;
+  $("nSub").textContent=narrSub;
+  if(animated&&!reduced()){
+    var nn=$("narrate"); nn.classList.remove("fresh");
+    void nn.getBoundingClientRect(); nn.classList.add("fresh");
+  }
+
+  $("btnStep").disabled=isHalted||!progCode.length;
+  $("btnRun").disabled=isHalted||!progCode.length;
+  $("btnPlay").disabled=!progCode.length||(isHalted&&!isPlaying);
+  $("btnBack").disabled=!cycleLog.size;
+}
+
+/* ---------- play mode ---------- */
+var isPlaying=false, playTimer=null, playGap=1050;
+function setPlay(on){
+  isPlaying=on;
+  var b=$("btnPlay");
+  b.innerHTML=on?"&#10073;&#10073; Pause":"&#9654; Play";
+  if(on) b.classList.add("playing"); else b.classList.remove("playing");
+  if(playTimer){clearInterval(playTimer);playTimer=null;}
+  if(on){
+    step();
+    playTimer=setInterval(function(){
+      if(isHalted){setPlay(false);return;}
+      step();
+    },playGap);
+  }
+}
+$("speed").addEventListener("input",function(e){
+  playGap=1800-(e.target.value-1)*160;
+  if(isPlaying){setPlay(false);setPlay(true);}
+});
+
+/* ---------- example programs ---------- */
+var EXAMPLES=[
+ {name:"Add 1 to 5 and print the total",
+  blurb:"This program adds the numbers 1 to 5 and prints the answer.",
+  code:"; Add up the numbers 1 to 5, save the answer, print it.\n"+
+"        LOAD  R0, #0        ; running total\n"+
+"        LOAD  R1, #1        ; counter\n"+
+"        LOAD  R2, #6        ; stop when the counter reaches 6\n"+
+"loop:   ADD   R0, R1        ; total = total + counter\n"+
+"        INC   R1            ; counter goes up by 1\n"+
+"        MOV   R3, R1\n"+
+"        CMP   R3, R2        ; has the counter reached 6?\n"+
+"        JNZ   loop          ; not yet - go round again\n"+
+"        STORE R0, [0x40]    ; keep the answer in memory\n"+
+"        OUT   R0            ; prints 15\n"+
+"        HLT\n"},
+
+ {name:"Basic arithmetic — add and subtract",
+  blurb:"Adds and subtracts two numbers, printing both answers.",
+  code:"; The simplest possible program: add, then subtract.\n"+
+"        LOAD  R0, #10\n"+
+"        LOAD  R1, #3\n"+
+"        MOV   R2, R0\n"+
+"        ADD   R2, R1        ; 10 + 3\n"+
+"        OUT   R2            ; prints 13\n"+
+"        MOV   R3, R0\n"+
+"        SUB   R3, R1        ; 10 - 3\n"+
+"        OUT   R3            ; prints 7\n"+
+"        HLT\n"},
+
+ {name:"Memory — save it, wipe it, read it back",
+  blurb:"Shows why memory matters: a register can be cleared, memory remembers.",
+  code:"; Store a value, clear the register, then read it back.\n"+
+"        LOAD  R0, #255\n"+
+"        STORE R0, [0x20]    ; save it into memory\n"+
+"        LOAD  R0, #0        ; wipe the register\n"+
+"        OUT   R0            ; prints 0\n"+
+"        LOADM R0, [0x20]    ; fetch it back from memory\n"+
+"        OUT   R0            ; prints 255\n"+
+"        HLT\n"},
+
+ {name:"Countdown loop — 5 4 3 2 1",
+  blurb:"A loop that counts down, printing each number on the way.",
+  code:"; Count down from 5 and print each number.\n"+
+"        LOAD  R0, #5\n"+
+"        LOAD  R1, #0\n"+
+"loop:   OUT   R0\n"+
+"        DEC   R0\n"+
+"        MOV   R2, R0\n"+
+"        CMP   R2, R1        ; reached zero?\n"+
+"        JNZ   loop\n"+
+"        HLT\n"},
+
+ {name:"Multiply 7 x 6 by repeated addition",
+  blurb:"The CPU has no multiply instruction, so we add 7 to itself six times.",
+  code:"; There is no MUL instruction, so multiply the long way.\n"+
+"        LOAD  R0, #0        ; product\n"+
+"        LOAD  R1, #7        ; the number to add\n"+
+"        LOAD  R2, #6        ; how many times\n"+
+"        LOAD  R3, #0        ; a constant zero to compare against\n"+
+"mul:    ADD   R0, R1\n"+
+"        DEC   R2\n"+
+"        MOV   R4, R2\n"+
+"        CMP   R4, R3\n"+
+"        JNZ   mul\n"+
+"        OUT   R0            ; prints 42\n"+
+"        STORE R0, [0x50]\n"+
+"        HLT\n"},
+
+ {name:"What happens below zero?",
+  blurb:"Subtracting past zero wraps around, because registers hold 16 bits.",
+  code:"; Registers are 16 bits, so 0 - 1 wraps around to 65535.\n"+
+"        LOAD  R0, #0\n"+
+"        DEC   R0\n"+
+"        OUT   R0            ; prints 65535, not -1\n"+
+"        HLT\n"}
+];
+var currentBlurb=EXAMPLES[0].blurb;
+
+function fillExamples(){
+  var sel=$("examples");
+  for(var i=0;i<EXAMPLES.length;i++){
+    var o=document.createElement("option");
+    o.value=String(i); o.textContent=EXAMPLES[i].name;
+    sel.appendChild(o);
+  }
+  sel.addEventListener("change",function(){
+    var ex=EXAMPLES[parseInt(this.value,10)];
+    currentBlurb=ex.blurb;
+    $("src").value=ex.code;
+    doAssemble();
+  });
+}
+
+/* ---------- wiring ---------- */
+function doAssemble(){
+  setPlay(false);
+  $("errBox").textContent="";
+  try{
+    progCode=assemble($("src").value);
+    resetMachine(); shownOut=0; $("outBody").innerHTML=""; clearHighlights();
+    narrMain="Ready — "+progCode.length+" instructions loaded.";
+    narrSub=currentBlurb;
+    render(true);
+  }catch(e){
+    progCode=[];progList.clear();resetMachine();shownOut=0;$("outBody").innerHTML="";
+    $("errBox").textContent=e.message;
+    narrMain="That program could not be assembled.";
+    narrSub=e.message;
+    render(true);
+  }
+}
+
+$("btnAsm").addEventListener("click",doAssemble);
+$("btnPlay").addEventListener("click",function(){setPlay(!isPlaying);});
+$("btnStep").addEventListener("click",function(){setPlay(false);step();});
+$("btnBack").addEventListener("click",function(){setPlay(false);stepBack();});
+$("btnReset").addEventListener("click",function(){
+  setPlay(false); resetMachine(); shownOut=0; $("outBody").innerHTML=""; clearHighlights();
+  narrMain="Machine reset. Everything is back to zero.";
+  narrSub="Press Play or Step to start again.";
+  render(true);
+});
+$("btnRun").addEventListener("click",function(){
+  setPlay(false);
+  var g=0; while(!isHalted&&g<20000){step();g++;}
+  narrMain="Ran the whole program — "+stepCount+" instructions.";
+  narrSub="Check the Output panel for the answer.";
+  render(true);
+});
+
+/* ---------- about overlay ---------- */
+var overlay=$("overlay");
+function setAbout(on){ overlay.classList.toggle("open",on); }
+$("aboutBtn").addEventListener("click",function(){setAbout(true);});
+$("closeBtn").addEventListener("click",function(){setAbout(false);});
+overlay.addEventListener("click",function(e){ if(e.target===overlay) setAbout(false); });
+var tabs=document.querySelectorAll(".tab");
+Array.prototype.forEach.call(tabs,function(t){
+  t.addEventListener("click",function(){
+    Array.prototype.forEach.call(tabs,function(x){x.classList.remove("on");});
+    t.classList.add("on");
+    ["p1","p2","p3","p4"].forEach(function(id){$(id).classList.remove("on");});
+    $(t.getAttribute("data-pane")).classList.add("on");
+  });
+});
+
+/* keyboard shortcuts, ignored while typing */
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){setAbout(false);return;}
+  var tag=(e.target&&e.target.tagName)?e.target.tagName.toLowerCase():"";
+  if(tag==="textarea"||tag==="input"||tag==="select") return;
+  if(overlay.classList.contains("open")) return;
+  if(e.code==="Space"){e.preventDefault();setPlay(false);step();}
+  else if(e.key==="p"||e.key==="P"){setPlay(!isPlaying);}
+  else if(e.key==="r"||e.key==="R"){setPlay(false);resetMachine();shownOut=0;
+    $("outBody").innerHTML="";clearHighlights();
+    narrMain="Machine reset. Everything is back to zero.";narrSub="Press Play or Step to start again.";
+    render(true);}
+});
+
+var themeBtn=$("themeBtn");
+themeBtn.addEventListener("click",function(){
+  var cur=document.documentElement.getAttribute("data-theme");
+  var nxt=cur==="dark"?"light":cur==="light"?null:"dark";
+  if(nxt) document.documentElement.setAttribute("data-theme",nxt);
+  else document.documentElement.removeAttribute("data-theme");
+  themeBtn.textContent=nxt?nxt.charAt(0).toUpperCase()+nxt.slice(1):"Theme";
+});
+
+buildRegTiles();
+fillExamples();
+$("src").value=EXAMPLES[0].code;
+resetMachine();
+doAssemble();
+</script>
+
+</body>
+</html>
