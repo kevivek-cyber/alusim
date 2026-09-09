@@ -47,6 +47,11 @@ growing function — the one place most likely to break.
 
 ---
 
+
+![Each class owns its own state. The ALU owns nothing at all, which is why it can be tested entirely on its own.](../diagrams/oop-classes.png)
+
+*Each class owns its own state. The ALU owns nothing at all, which is why it can be tested entirely on its own.*
+
 ## The class hierarchy
 
 ```
@@ -73,6 +78,11 @@ conditions — the difference is data held in the object, not a separate class e
 is a deliberate judgement about where inheritance stops being useful.
 
 ---
+
+
+![A fourteen-branch conditional against one class per instruction. The right-hand design leaves the processor untouched when an instruction is added.](../diagrams/oop-complexity.png)
+
+*A fourteen-branch conditional against one class per instruction. The right-hand design leaves the processor untouched when an instruction is added.*
 
 ## Templates — write once, use for anything
 

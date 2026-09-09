@@ -21,6 +21,11 @@ a real job inside the processor — none of them exist just to demonstrate a top
 
 ---
 
+
+![Singly linked for the log and listing; doubly linked for the rewind history, because states arrive at one end and are discarded from the other.](../diagrams/ds-linked-lists.png)
+
+*Singly linked for the log and listing; doubly linked for the rewind history, because states arrive at one end and are discarded from the other.*
+
 ## `Stack.h` — the CPU's call stack
 
 Holds values in last-in-first-out order using linked nodes. Has an optional capacity, so

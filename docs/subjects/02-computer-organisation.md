@@ -23,6 +23,11 @@ responsibility it has in real hardware.
 
 ---
 
+
+![The machine we designed: register file, control unit and memory on one shared bus, with the ALU beneath it.](../diagrams/coa-datapath.png)
+
+*The machine we designed: register file, control unit and memory on one shared bus, with the ALU beneath it.*
+
 ## `Word.h` — the machine word
 
 A 16-bit value with all the operators a processor needs, so ALU code reads like
@@ -64,6 +69,11 @@ instruction. Without it the diagram could show values but not activity.
 Flags live here too — Zero, Carry, Overflow and Negative, printed as `Z-V-` style text.
 
 ---
+
+
+![The ALU is a pure function: two operands in, a result and four flags out. The flags are the only way a processor can decide anything.](../diagrams/coa-alu-flags.png)
+
+*The ALU is a pure function: two operands in, a result and four flags out. The flags are the only way a processor can decide anything.*
 
 ## `ALU.h` / `ALU.cpp` — the calculator
 
@@ -168,6 +178,11 @@ diagram can show memory activity.
 
 ---
 
+
+![One call to step() advances exactly one stage, and each stage asserts its own control signals — fourteen lines in total, regenerated every cycle.](../diagrams/coa-instruction-cycle.png)
+
+*One call to step() advances exactly one stage, and each stage asserts its own control signals — fourteen lines in total, regenerated every cycle.*
+
 ## `CPU.h` / `.cpp` — the datapath
 
 The part that ties everything together. One call to `step()` advances **exactly one
@@ -187,6 +202,11 @@ The CPU also owns the call stack (`ds::Stack<Word>`), the cycle history
 execution can be rewound.
 
 ---
+
+
+![Two passes, because a jump can point forwards to a label that has not been seen yet.](../diagrams/coa-assembler.png)
+
+*Two passes, because a jump can point forwards to a label that has not been seen yet.*
 
 ## `asm/Assembler.h` / `.cpp` — text into instructions
 

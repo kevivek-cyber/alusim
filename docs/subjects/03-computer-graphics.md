@@ -21,6 +21,11 @@ decide which dots to light, and that decision is what this folder contains.
 
 ---
 
+
+![Four primitives — rectangle, line, circle and text — composed into the whole interface.](../diagrams/cg-primitives.png)
+
+*Four primitives — rectangle, line, circle and text — composed into the whole interface.*
+
 ## `Canvas` — a pixel buffer we own
 
 The Canvas is a plain array of pixels with a width and a height. Every drawing routine
@@ -162,6 +167,11 @@ The textbook version recurses, which on a large region exhausts the call stack. 
 own stack array avoids that — a practical concern the recursive form hides.
 
 ---
+
+
+![Translation carries the value along a waypoint route; scaling is applied about the centre of the diagram so zoom expands from the middle.](../diagrams/cg-transforms.png)
+
+*Translation carries the value along a waypoint route; scaling is applied about the centre of the diagram so zoom expands from the middle.*
 
 ## Cohen–Sutherland clipping — cutting wires at the edge
 
