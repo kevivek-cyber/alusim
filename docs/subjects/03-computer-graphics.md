@@ -41,6 +41,7 @@ void Canvas::setPixel(int x, int y, Pixel p) {
     if (inBounds(x, y)) buffer_[y * width_ + x] = p;
 }
 ```
+<sub>src/ui/Canvas.h (members) and src/ui/Canvas.cpp:44 (setPixel)</sub>
 
 **Why this matters:** at the moment `render()` prints the buffer as characters in a
 terminal. Swapping to an SDL2 or OpenGL window means rewriting only that one function —
@@ -55,21 +56,23 @@ Draws a straight line using integers only. An error term tracks how far the true
 drifted from the pixel grid, so there is no floating point and no rounding.
 
 ```cpp
-void Canvas::drawLineBresenham(int x0,int y0,int x1,int y1,Pixel p){
-    int dx =  std::abs(x1-x0);
-    int dy = -std::abs(y1-y0);
-    int sx = (x0<x1) ? 1 : -1;
-    int sy = (y0<y1) ? 1 : -1;
+void Canvas::drawLineBresenham(int x0, int y0, int x1, int y1, Pixel p) {
+    int dx =  std::abs(x1 - x0);
+    int dy = -std::abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
     int err = dx + dy;
-    for(;;){
-        setPixel(x0,y0,p);
-        if(x0==x1 && y0==y1) break;
-        int e2 = 2*err;
-        if(e2 >= dy){ err += dy; x0 += sx; }
-        if(e2 <= dx){ err += dx; y0 += sy; }
+
+    for (;;) {
+        setPixel(x0, y0, p);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
     }
 }
 ```
+<sub>src/ui/Canvas.cpp:56</sub>
 
 **What it draws:** the shared data bus, and every wire dropping from a component onto it.
 
@@ -86,15 +89,22 @@ seven octants, because a circle is symmetric. Seven eighths of the work is avoid
 
 ```cpp
 while (y >= x) {
-    setPixel(cx + x, cy + y, p);   setPixel(cx - x, cy + y, p);
-    setPixel(cx + x, cy - y, p);   setPixel(cx - x, cy - y, p);
-    setPixel(cx + y, cy + x, p);   setPixel(cx - y, cy + x, p);
-    setPixel(cx + y, cy - x, p);   setPixel(cx - y, cy - x, p);
+    // eight-way symmetry
+    setPixel(cx + x, cy + y, p);
+    setPixel(cx - x, cy + y, p);
+    setPixel(cx + x, cy - y, p);
+    setPixel(cx - x, cy - y, p);
+    setPixel(cx + y, cy + x, p);
+    setPixel(cx - y, cy + x, p);
+    setPixel(cx + y, cy - x, p);
+    setPixel(cx - y, cy - x, p);
+
     ++x;
     if (d > 0) { --y; d = d + 4 * (x - y) + 10; }
     else       {      d = d + 4 * x + 6; }
 }
 ```
+<sub>src/ui/Canvas.cpp:107</sub>
 
 ---
 
@@ -105,13 +115,17 @@ It is not used for the diagram; it exists so the two approaches can be compared 
 rather than described.
 
 ```cpp
-double xInc = (double)dx / steps;
-double yInc = (double)dy / steps;
+double xInc = static_cast<double>(dx) / steps;
+double yInc = static_cast<double>(dy) / steps;
+double x = x0, y = y0;
+
 for (int i = 0; i <= steps; ++i) {
-    setPixel((int)(x + 0.5), (int)(y + 0.5), p);
-    x += xInc;  y += yInc;
+    setPixel(static_cast<int>(x + 0.5), static_cast<int>(y + 0.5), p);
+    x += xInc;
+    y += yInc;
 }
 ```
+<sub>src/ui/Canvas.cpp:84</sub>
 
 ---
 
@@ -137,6 +151,7 @@ for (int y = yMin; y <= yMax; ++y) {
     // insertion sort the crossings, then fill between pairs
 }
 ```
+<sub>src/ui/Canvas.cpp:227</sub>
 
 The half-open rule (`y >= lo && y < hi`) is the detail that stops shared vertices being
 counted twice, which would otherwise leave gaps in the fill.
@@ -162,6 +177,7 @@ while (top > 0) {
     // push the four neighbours
 }
 ```
+<sub>src/ui/Canvas.cpp:269</sub>
 
 The textbook version recurses, which on a large region exhausts the call stack. Using our
 own stack array avoids that — a practical concern the recursive form hides.
@@ -186,6 +202,7 @@ else if (x > win.xmax) c |= 2;   // RIGHT
 if (y < win.ymin)      c |= 4;   // BOTTOM
 else if (y > win.ymax) c |= 8;   // TOP
 ```
+<sub>src/ui/Canvas.cpp:147</sub>
 
 Then three cases:
 
@@ -194,6 +211,7 @@ if ((c0 | c1) == 0) return true;    // both inside  -> accept
 if ((c0 & c1) != 0) return false;   // both outside the same edge -> reject
 // otherwise push the outside endpoint onto the boundary and try again
 ```
+<sub>src/ui/Canvas.cpp:159</sub>
 
 The bitwise AND test is the clever part: if both endpoints share an outside region, the
 line cannot possibly cross the window, so it is thrown away without any arithmetic.
@@ -209,8 +227,10 @@ dots, with active parts drawn differently:
 
 ```cpp
 Pixel busPix = sig.busActive ? PX_ACTIVE : PX_WIRE;
+...
 c.drawLineBresenham(2, busY, W - 3, busY, busPix);
 ```
+<sub>src/ui/ConsoleView.cpp:63 and :103</sub>
 
 The flag feedback wire from the ALU back to the control unit is drawn **through the
 clipper**, so panning and zooming behave correctly:
@@ -219,6 +239,7 @@ clipper**, so panning and zooming behave correctly:
 ClipWindow win(0, 0, W - 1, H - 1);
 c.clipAndDrawLine(44, 16, 47, 16, win, flagPix);
 ```
+<sub>src/ui/ConsoleView.cpp:142</sub>
 
 **The waveform view** — the logic-analyzer display. One row per control signal, one
 column per clock cycle, with rising and falling edges marked:

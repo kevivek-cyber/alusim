@@ -34,10 +34,9 @@ A 16-bit value with all the operators a processor needs, so ALU code reads like
 arithmetic instead of function calls.
 
 ```cpp
-Word operator+(const Word& o) const { return Word((u16)(value_ + o.value_)); }
-bool msb() const { return bit(BITS - 1); }     // the sign bit
-std::string toBinary(int width = BITS) const;  // for the register display
+Word operator+(const Word& o) const { return Word(static_cast<u16>(value_ + o.value_)); }
 ```
+<sub>src/core/Word.h:44</sub>
 
 It also knows how to print itself as binary, hexadecimal, unsigned decimal and signed
 decimal — which is what lets the interface switch number bases.
@@ -62,6 +61,7 @@ Each register also records whether it was **read or written during this cycle**:
 Word read()        { readThisCycle_ = true;  return value_; }
 void write(Word v) { value_ = v; wroteThisCycle_ = true; }
 ```
+<sub>src/core/RegisterFile.h:36</sub>
 
 That is what lets the display highlight exactly which registers took part in the current
 instruction. Without it the diagram could show values but not activity.
@@ -83,8 +83,9 @@ Performs ADD, SUB, AND, OR, XOR, NOT, SHL, SHR, CMP, INC and DEC, returning a re
 It holds no state at all — the same inputs always give the same outputs:
 
 ```cpp
-AluResult ALU::execute(AluOp op, Word a, Word b);
+AluResult execute(AluOp op, Word a, Word b);
 ```
+<sub>src/core/ALU.h:82</sub>
 
 That purity is deliberate: it means the ALU can be tested on its own, with no processor
 around it.
@@ -95,9 +96,14 @@ Carry is the bit that falls out of the top. We add in a 32-bit scratch value and
 bit 16:
 
 ```cpp
-wide = (u32)a.raw() + (u32)b.raw();
-res.flags.carry = (wide & 0x10000u) != 0;
+case ALU_ADD:
+    wide = static_cast<u32>(a.raw()) + static_cast<u32>(b.raw());
+    res.value = Word(static_cast<u16>(wide));
+    res.flags.carry    = (wide & 0x10000u) != 0;
+    res.flags.overflow = computeOverflowAdd(a, b, res.value);
+    break;
 ```
+<sub>src/core/ALU.cpp:44</sub>
 
 Signed overflow is a different question — it happens when both operands share a sign but
 the result does not:
@@ -107,6 +113,7 @@ bool ALU::computeOverflowAdd(Word a, Word b, Word r) {
     return (a.msb() == b.msb()) && (r.msb() != a.msb());
 }
 ```
+<sub>src/core/ALU.cpp:27</sub>
 
 **Multiplication** is also here, done two ways so they can be compared — add-and-shift,
 and successive addition. Both return a printable trace:
@@ -115,6 +122,7 @@ and successive addition. Both return a printable trace:
 static Word multiplyAddShift(Word a, Word b, std::string* trace);
 static Word multiplySuccessiveAdd(Word a, Word b, std::string* trace);
 ```
+<sub>src/core/ALU.h:88</sub>
 
 Running both on 13 × 7 and getting 91 from each is also a correctness check.
 
@@ -132,6 +140,7 @@ public:
     virtual ControlSignals signals() const   = 0;
 };
 ```
+<sub>src/core/Instruction.h:65</sub>
 
 **The control signals** are the control unit's entire output — fourteen lines,
 regenerated every cycle:
@@ -156,6 +165,7 @@ ControlSignals AluBinaryInstruction::signals() const {
     return s;
 }
 ```
+<sub>src/core/Instruction.cpp:188</sub>
 
 Because those signals already exist, plotting them as a timing chart later requires no
 new machinery — only a view.
@@ -172,6 +182,7 @@ class Memory {
     ds::HashMap<unsigned int, u16> cells_;   // address -> value
 };
 ```
+<sub>src/core/Memory.h:22</sub>
 
 It also tracks the last address touched and whether it was a read or a write, so the
 diagram can show memory activity.
@@ -194,6 +205,7 @@ case STAGE_DECODE:     // ask the instruction for its control signals
 case STAGE_EXECUTE:    // current_->execute(*this)   <- polymorphic
 case STAGE_WRITEBACK:  // PC advances, unless a branch already moved it
 ```
+<sub>the four cases of CPU::step() — src/core/CPU.cpp:128-176, bodies omitted</sub>
 
 That is what turns a memorised four-word sequence into something you can watch happen.
 
@@ -220,6 +232,7 @@ if (colon != std::string::npos) {
     if (!label.empty()) symbols_.put(label, address);
 }
 ```
+<sub>src/asm/Assembler.cpp:253</sub>
 
 **Pass two** builds the instruction objects and resolves label references, so `JNZ loop`
 becomes a jump to line 3.

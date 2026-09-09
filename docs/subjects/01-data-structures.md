@@ -46,6 +46,7 @@ T pop() {
     return value;
 }
 ```
+<sub>src/ds/Stack.h:65</sub>
 
 If a program returns without having called anything, the stack refuses and the simulator
 reports a clear error rather than jumping to a garbage address.
@@ -73,6 +74,7 @@ T dequeue() {
     return value;
 }
 ```
+<sub>src/ds/CircularQueue.h:52</sub>
 
 Nothing is ever moved or reallocated — the same array is reused indefinitely. This is
 also what the round-robin scheduling demonstration runs on.
@@ -97,6 +99,7 @@ void pushBack(const T& value) {
     ++size_;
 }
 ```
+<sub>src/ds/Deque.h:79</sub>
 
 It also supports restricted modes, where one end is deliberately blocked:
 
@@ -107,6 +110,7 @@ void pushFront(const T& value) {
     ...
 }
 ```
+<sub>src/ds/Deque.h:68</sub>
 
 ---
 
@@ -140,6 +144,7 @@ void sort(Compare less) {
     head_ = sorted;
 }
 ```
+<sub>src/ds/LinkedList.h:98</sub>
 
 This is what puts the memory dump in address order before it is displayed — without it,
 cells appear in hash-bucket order, which reads as noise.
@@ -171,6 +176,7 @@ Entry* e = new Entry(key, value);
 e->next = table_[home];
 table_[home] = e;
 ```
+<sub>src/ds/HashMap.h:222</sub>
 
 Deleting under open addressing leaves a tombstone rather than an empty slot, so probe
 chains are not broken:
@@ -179,6 +185,7 @@ chains are not broken:
 e->occupied = false;
 e->deleted  = true;      // keeps the probe chain intact
 ```
+<sub>src/ds/HashMap.h:168</sub>
 
 ---
 

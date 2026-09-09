@@ -21,6 +21,7 @@ else if (op == "LOAD")  { /* ... */ }
 else if (op == "JMP")   { /* ... */ }
 // ...fifteen branches, growing with every new instruction
 ```
+<sub>illustration of the approach we rejected — this is NOT in our source</sub>
 
 **What we did instead** — one abstract base, and a small class per instruction:
 
@@ -33,6 +34,7 @@ public:
     virtual ControlSignals signals() const   = 0;
 };
 ```
+<sub>src/core/Instruction.h:65</sub>
 
 And then the entire execute stage of the processor is one line:
 
@@ -40,6 +42,7 @@ And then the entire execute stage of the processor is one line:
 // src/core/CPU.cpp
 current_->execute(*this);      // no idea, and no need to know, which instruction
 ```
+<sub>src/core/CPU.cpp:163</sub>
 
 **What this buys:** adding a new instruction means writing one new class and changing
 nothing at all inside the CPU. With the branch chain, every addition edits the same
@@ -90,19 +93,20 @@ Every container in `src/ds/` is a template, so one implementation serves every t
 needed for.
 
 ```cpp
-template <typename T> class Stack;
-template <typename T> class LinkedList;
-template <typename T> class Deque;
-template <typename T> class CircularQueue;
+template <typename T> class Stack;             // src/ds/Stack.h:23
+template <typename T> class LinkedList;        // src/ds/LinkedList.h:16
+template <typename T> class Deque;             // src/ds/Deque.h:31
+template <typename T> class CircularQueue;     // src/ds/CircularQueue.h:22
 template <typename K, typename V, typename H = Hasher<K> > class HashMap;
 ```
+<sub>the five container templates, one line each — declarations only</sub>
 
 The same `Stack<T>` is used as:
 
 ```cpp
-ds::Stack<Word>   callStack_;     // in CPU.h — return addresses
-ds::Stack<char>                   // in the expression evaluator — operators
+ds::Stack<Word>          callStack_;    // CALL / RET and PUSH / POP
 ```
+<sub>src/core/CPU.h:58 — the same template also serves Stack&lt;char&gt; in the evaluator</sub>
 
 One piece of code, used safely for two unrelated types, checked by the compiler each
 time.
@@ -133,6 +137,7 @@ Plus stream insertion, so a register can be printed directly:
 ```cpp
 std::ostream& operator<<(std::ostream& os, const Word& w);
 ```
+<sub>src/core/Word.h:92</sub>
 
 **Why:** the ALU reads as `a + b` rather than `add16(a, b)`. Easier to read, and easier
 to check for mistakes.
@@ -152,6 +157,7 @@ public:
     virtual std::string kind() const { return "SimulatorException"; }
 };
 ```
+<sub>src/core/Exceptions.h:16</sub>
 
 With specific types beneath it:
 
@@ -174,6 +180,7 @@ catch (const SimulatorException& e) {
     std::cout << "  [" << e.kind() << "] " << e.what() << "\n";
 }
 ```
+<sub>src/main.cpp:342</sub>
 
 So a typo in a program produces:
 
@@ -199,6 +206,7 @@ void clear() {
     size_ = 0;
 }
 ```
+<sub>src/ds/Deque.h:129</sub>
 
 Copy constructors deep-copy, so two structures never share a node:
 
@@ -207,6 +215,7 @@ LinkedList(const LinkedList& other) : head_(0), tail_(0), size_(0) {
     for (Node* n = other.head_; n != 0; n = n->next) pushBack(n->data);
 }
 ```
+<sub>src/ds/LinkedList.h:32</sub>
 
 The Canvas allocates its pixel buffer the same way, and the CPU owns and frees the loaded
 program array.
@@ -248,6 +257,7 @@ bool msb()  const { return bit(BITS - 1); }
 // const-correctness so the UI cannot accidentally mutate the machine
 const RegisterFile& registers() const { return regs_; }
 ```
+<sub>src/core/RegisterFile.h:69</sub>
 
 ---
 
